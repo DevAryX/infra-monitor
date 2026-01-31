@@ -24,7 +24,7 @@ status_message() {
 
 clear
 
-echo -e "${CYAN}${BOLD}SYSTEM STATUS REPORT${RESET}"
+echo -e "${CYAN}${BOLD}SYSTEM HEALTH REPORT${RESET}"
 echo "Date: $(date)"
 echo "Hostname: $(hostname)"
 echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -o)"
