@@ -37,25 +37,25 @@ Clone the repository:
 ```bash
 git clone https://github.com/DevAryX/infra-monitor.git
 cd infra-monitor
-
+```
 
 Make scripts executable:
 
 ```bash
 chmod +x scripts/*.sh
-
+```
 
 Run the system report:
 
 ```bash
 ./scripts/system_report.sh
-
+```
 
 Run the resource checker:
 
 ```bash
 ./scripts/resource_check.sh
-
+```
 ---
 
 ## What I’ve learned so far
