@@ -94,3 +94,19 @@ This project is intentionally built step-by-step.
 Each stage reflects what I understood at that time.
 
 
+---
+
+## February 2026 Milestone
+
+This month focused on building strong Git and GitHub fundamentals using a single, evolving project.
+
+
+Key outcomes:
+- Wrote and refactored real Linux monitoring scripts
+- Used feature branches for all new work
+- Practiced merges, rebasing, and conflict resolution
+- Learning how to recover from mistakes without panic
+- Treated GitHub as a workflow, not just storage
+
+
+Future months will build directly on this Foundation Insha'Allah.
