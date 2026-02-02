@@ -1,0 +1,19 @@
+# Editor / OS junk
+*.swp
+*.swo
+*.tmp
+*~
+.DS_Store
+
+
+# Logs
+*.log
+
+
+# Enviroment files
+.env
+
+
+# Terraform (future-proofing)
+.terraform/
+terraform.tfstate*
