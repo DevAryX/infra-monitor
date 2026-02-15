@@ -91,20 +91,57 @@ Probably won’t use multiple AZs yet but just tryna understand why they exist.
 
 # PART 4
 
-Mental Model (Very Important)
-
 When you launch EC2 in March, what’s actually happening?
 
 You are:
-
 Renting compute
-
 In a specific region
-
 In a specific availability zone
-
 With a public IP
-
 Secured by a firewall (security group)
-
 Everything else is layers on top of this.
+
+
+# Part 5 
+
+### Root Account vs IAM
+
+When you create an AWS account via Amazon Web Services, you automatically get:
+
+Root User:
+Full control over everything
+Can close the account
+Can change billing
+Cannot be restricted
+This is nuclear-level access.
+You DO NOT use root for daily work.
+
+
+IAM (Identity and Access Management)
+IAM lets you:
+Create users
+Assign permissions
+Control what actions are allowed
+
+
+Think of it like:
+Linux users + sudo permissions
+But for the cloud.
+
+Service name:
+AWS Identity and Access Management
+
+### Remember
+Root = God mode
+IAM user = Real operator
+
+In real companies:
+Root is locked away
+Engineers use IAM roles/users
+Permissions are tightly scoped
+For now, i'll  give myself broad access,  but i'll understand why that’s temporary.
+
+
+
+
+
