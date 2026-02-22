@@ -1,4 +1,4 @@
-# PART 1
+# What is Cloud
 
 The cloud is:
 
@@ -27,7 +27,7 @@ Your security configuration
 This separation is important.
 
 
-# PART 2
+# AWS Info
 
 ### Amazon EC2 = Elastic Compute Cloud.
 
@@ -60,7 +60,7 @@ It behaves like a normal Linux machine
 
 
 
-# PART 3
+# How Servers Operate
 
 Regions & Availability Zones
 
@@ -88,9 +88,6 @@ Reduced latency
 
 Probably won’t use multiple AZs yet but just tryna understand why they exist.
 
-
-# PART 4
-
 When you launch EC2 in March, what’s actually happening?
 
 You are:
@@ -102,7 +99,7 @@ Secured by a firewall (security group)
 Everything else is layers on top of this.
 
 
-# Part 5 
+# IAM vs ROOT
 
 ### Root Account vs IAM
 
