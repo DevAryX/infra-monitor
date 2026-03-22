@@ -202,9 +202,9 @@ This is the foundation
 
 ---
 
-## Mental Model Going Forward
+## how to think going forward
 
-Right now I have:
+Rn I have:
 
 - One Linux server  
 - Accessible via SSH  
@@ -225,6 +225,30 @@ This is **raw infrastructure**.
 But everything starts with:
 
 > Understanding one server properly
+
+---
+
+## Security Groups
+
+### What is a Security Group?
+A security group is a virtual firewall attached to an EC2 instance.  
+It controls what traffic can enter (inbound) and leave (outbound) the server.
+
+### What Does "Stateful" Mean?
+Security groups are **stateful**.  
+If inbound traffic is allowed, the response is automatically allowed back out.  
+I don’t need separate rules for return traffic.
+
+### Inbound vs Outbound
+- **Inbound** → Who can connect to my server and on which port.  
+- **Outbound** → What my server is allowed to connect to.
+
+### Why `0.0.0.0/0` is Dangerous for SSH
+`0.0.0.0/0` means anyone in the world can attempt to connect.  
+For SSH (port 22), this exposes the server to constant scans and attacks
+
+### Why Limiting to My IP is Better
+Allowing SSH only from **my IP** stops attack surface and follows least privilege
 
 ---
 
