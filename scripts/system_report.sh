@@ -35,7 +35,6 @@ status_message() {
     fi
 }
 
-clear
 echo -e "${CYAN}${BOLD}SYSTEM HEALTH REPORT${RESET}"
 echo "Date: $(date)"
 echo "Hostname: $(hostname)"
@@ -100,7 +99,7 @@ ip -brief addr show | grep UP >> "$LOG_FILE" || true
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
 echo "" >> "$LOG_FILE"
 
-if ! aws s3 cp $LOG_FILE s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log; then
+if ! aws s3 cp "$LOG_FILE" s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log; then
 	echo "S3 upload failed at $(date)" >> "$ERROR_LOG"
 fi
 
@@ -108,7 +107,7 @@ MAX_SIZE=50000  # 50KG for Learning
 FILE_SIZE=$(stat -c%s "$LOG_FILE")
 
 if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
-	mv $LOG_FILE "$BASE_DIR/logs/system_report_$(date +%F_%H-%M-%S).log"
-	touch $LOG_FILE
+	mv "$LOG_FILE" "$BASE_DIR/logs/system_report_$(date +%F_%H-%M-%S).log"
+	touch "$LOG_FILE"
 fi
 
