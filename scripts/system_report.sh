@@ -6,6 +6,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Log file
 LOG_FILE="/home/ec2-user/infra-monitor/logs/system_report.log"
+set -e
 
 # Colours
 RED="\e[31m"
@@ -94,4 +95,16 @@ ip -brief addr show | grep UP >> "$LOG_FILE"
 
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
 echo "" >> "$LOG_FILE"
-aws s3 cp $LOG_FILE s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log
+aws s3 cp $LOG_FILE s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log; then
+	echo "S3 upload failed at $(date)" >> infra-monitor/logs/error.log
+fi
+
+MAX_SIZE=50000  # 50KG for Learning
+
+FILE_SIZE=$(stat -c%s "$LOG_FILE")
+
+if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
+	mv $LOG_FILE "infra-monitor/logs/system_report_$(date +%F_%H-%M-%S).log"
+	touch $LOG_FILE
+fi
+
