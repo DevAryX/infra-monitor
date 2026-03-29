@@ -252,6 +252,39 @@ Allowing SSH only from **my IP** stops attack surface and follows least privileg
 
 ---
 
+## Initial Server Setup (Amazon Linux 2023)
+
+### Update the System
+sudo dnf update -y
+
+Updating installs security patches and bug fixes.  
+Even new AMIs can be slightly outdated. Always update first anywhere
+
+
+### Install Git
+sudo dnf install git -y
+
+Minimal servers don’t include dev tools
+Git is needed to clone and manage repositories from GitHub.
+
+
+### Why Servers Are Minimal
+Cloud images are stripped down on purpose:
+- Smaller attack surface
+- Less memory usage
+- Faster boot time
+
+Only essentials are preinstalled.
+
+
+### apt vs dnf
+- apt → Debian/Ubuntu  
+- dnf → Amazon Linux / RHEL  
+
+Both are package managers used to install and manage software, i accidentally did dnf, but its fine, and we roll.
+
+---
+
 ## Key Concepts to Remember
 
 - **AMI** → OS template  
