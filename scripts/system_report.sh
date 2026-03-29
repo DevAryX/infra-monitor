@@ -5,12 +5,12 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # ===== System Health Report =====
 
 # Log file
-mkdir -p "$BASE_DIR/logs"
-
 BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 LOG_FILE="$BASE_DIR/logs/system_report.log"
 ERROR_LOG="$BASE_DIR/logs/error.log"
 set -e
+
+mkdir -p "$BASE_DIR/logs"
 
 # Colours
 RED="\e[31m"
