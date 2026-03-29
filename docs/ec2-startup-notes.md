@@ -285,6 +285,28 @@ Both are package managers used to install and manage software, i accidentally di
 
 ---
 
+## Deploying Project to EC2
+
+### Why Clone Instead of Copy Files
+Use:
+git clone <repo-url>
+Cloning pulls the full repository with version history.  
+It’s cleaner, repeatable, and matches real DevOps workflow.
+
+### Why chmod +x Is Required
+chmod +x script.sh
+Makes the script executable.  
+
+### Why Testing on Cloud Matters
+Running locally ≠ running in the cloud.
+
+Testing on EC2:
+- Confirms dependencies work
+- Confirms networking works
+- Simulates real production environment
+
+---
+
 ## Key Concepts to Remember
 
 - **AMI** → OS template  
