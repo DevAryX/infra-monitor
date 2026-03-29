@@ -5,7 +5,11 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # ===== System Health Report =====
 
 # Log file
-LOG_FILE="/home/ec2-user/infra-monitor/logs/system_report.log"
+mkdir -p "$BASE_DIR/logs"
+
+BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+LOG_FILE="$BASE_DIR/logs/system_report.log"
+ERROR_LOG="$BASE_DIR/logs/error.log"
 set -e
 
 # Colours
@@ -90,21 +94,21 @@ ps -eo pid,user,%mem,%cpu,comm --sort=-%mem | head -n 6 >> "$LOG_FILE"
 # Network
 # ----------------------------
 print_section "Network Interfaces"
-ip -brief addr show | grep UP
-ip -brief addr show | grep UP >> "$LOG_FILE"
+ip -brief addr show | grep UP || true
+ip -brief addr show | grep UP >> "$LOG_FILE" || true
 
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
 echo "" >> "$LOG_FILE"
-aws s3 cp $LOG_FILE s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log; then
-	echo "S3 upload failed at $(date)" >> infra-monitor/logs/error.log
+
+if ! aws s3 cp $LOG_FILE s3://infra-monitor-ary-logs-2026-314146300600-eu-west-2-an/system_report.log; then
+	echo "S3 upload failed at $(date)" >> "$ERROR_LOG"
 fi
 
 MAX_SIZE=50000  # 50KG for Learning
-
 FILE_SIZE=$(stat -c%s "$LOG_FILE")
 
 if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
-	mv $LOG_FILE "infra-monitor/logs/system_report_$(date +%F_%H-%M-%S).log"
+	mv $LOG_FILE "$BASE_DIR/logs/system_report_$(date +%F_%H-%M-%S).log"
 	touch $LOG_FILE
 fi
 
