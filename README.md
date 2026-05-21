@@ -61,6 +61,27 @@ Run the monitoring script manually:
 
 ---
 
+## Infrastructure Overview
+
+This project currently runs on an AWS EC2 instance using Amazon Linux 2023.
+
+The instance is deployed inside an AWS VPC and public subnet, with internet access provided through an Internet Gateway. SSH access is controlled using AWS Security Groups.
+
+Current architecture:
+
+```text
+Ubuntu VM → Internet → AWS VPC → Public Subnet → EC2 Instance
+```
+
+A basic architecture diagram is available in:
+
+```text
+docs/architecture-diagram.png
+```
+
+---
+
+
 ## ⚙️ Cron Setup (Automation)
 
 Edit your crontab:
