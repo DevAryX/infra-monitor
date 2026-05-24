@@ -96,3 +96,50 @@ Several parts need to work together:
 - Internet Gateway
 
 So if SSH breaks, I now know there are multiple network layers to check instead of just assuming the server is broken.
+
+
+## April Day 3 — Security Groups
+
+A Security Group is like a firewall for my EC2 instance.
+
+It controls what traffic can enter and leave the server.
+
+### SSH Access
+
+My EC2 instance allows SSH on port `22` only from my public IP.
+
+```text
+SSH → Port 22 → My Public IP /32
+```
+
+Using `/32` means only my exact IP can connect.
+
+This is safer than:
+
+```text
+0.0.0.0/0
+```
+
+because that would allow anyone on the internet to try SSH.
+
+### Outbound Access
+
+The instance can access the internet using:
+
+```text
+All traffic → 0.0.0.0/0
+```
+
+This allows updates, package installs, and S3 uploads.
+
+### Connection Flow
+
+```text
+Ubuntu VM → Internet → EC2 Public IP → Security Group → EC2 Instance
+```
+
+To test SSH:
+
+```bash
+nc -vz EC2_PUBLIC_IP 22
+```
