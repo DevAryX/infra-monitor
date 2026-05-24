@@ -143,3 +143,47 @@ To test SSH:
 ```bash
 nc -vz EC2_PUBLIC_IP 22
 ```
+
+
+## April Day 4 — SSH Access Restricted
+
+SSH access to my EC2 instance is now restricted using AWS Security Groups.
+
+Instead of allowing SSH from anywhere:
+
+```text
+SSH → TCP 22 → 0.0.0.0/0
+```
+
+I restricted it to my own public IP:
+
+```text
+SSH → TCP 22 → My Public IP /32
+```
+
+The `/32` means only one exact IP address is allowed.
+
+### SSH Flow
+
+```text
+Ubuntu VM → Home Public IP → Internet → Security Group → EC2 Instance
+```
+
+### Testing
+
+I tested port `22` from my Ubuntu VM:
+
+```bash
+nc -vz EC2_PUBLIC_IP 22
+```
+
+I also confirmed SSH still works:
+
+```bash
+ssh -i learning/ssh/infra-monitor-key.pem ec2-user@EC2_PUBLIC_IP
+```
+
+### Why This Matters
+
+Restricting SSH reduces exposure because random public IPs can no longer attempt to connect.
+The private key is still required, but the Security Group adds another layer of protection.
