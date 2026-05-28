@@ -183,6 +183,46 @@ I also confirmed SSH still works:
 ssh -i learning/ssh/infra-monitor-key.pem ec2-user@EC2_PUBLIC_IP
 ```
 
+## April Day 5 — Host Firewall on Amazon Linux 2023
+
+Today I added another firewall layer inside the EC2 instance itself.
+
+Before traffic reaches SSH, it now goes through two layers:
+
+```text
+Internet → Security Group → EC2 Host Firewall → SSH
+```
+
+The Security Group protects the instance from the AWS side, while the host firewall protects it from inside the Linux server.
+
+On Amazon Linux 2023, I used `firewalld` instead of `ufw`, since `ufw` is more common on Ubuntu.
+
+### Commands Used
+
+```bash
+sudo dnf install firewalld -y
+sudo firewall-offline-cmd --zone=public --add-service=ssh
+sudo firewall-offline-cmd --set-default-zone=public
+sudo systemctl enable --now firewalld
+sudo firewall-cmd --list-all
+```
+
+### Current Setup
+
+```text
+Allowed service: ssh
+Port: 22/tcp
+```
+
+### Why This Matters
+
+This adds defence in depth.
+
+The Security Group controls access before traffic reaches the EC2 instance, and `firewalld` controls access once traffic reaches the server.
+
+So instead of relying on one layer, the instance now has cloud-level and Linux-level protection.
+
+
 ### Why This Matters
 
 Restricting SSH reduces exposure because random public IPs can no longer attempt to connect.
