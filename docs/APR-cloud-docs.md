@@ -98,6 +98,8 @@ Several parts need to work together:
 So if SSH breaks, I now know there are multiple network layers to check instead of just assuming the server is broken.
 
 
+
+
 ## April Day 3 — Security Groups
 
 A Security Group is like a firewall for my EC2 instance.
@@ -145,6 +147,7 @@ nc -vz EC2_PUBLIC_IP 22
 ```
 
 
+
 ## April Day 4 — SSH Access Restricted
 
 SSH access to my EC2 instance is now restricted using AWS Security Groups.
@@ -182,6 +185,8 @@ I also confirmed SSH still works:
 ```bash
 ssh -i learning/ssh/infra-monitor-key.pem ec2-user@EC2_PUBLIC_IP
 ```
+
+
 
 ## April Day 5 — Host Firewall on Amazon Linux 2023
 
@@ -227,3 +232,63 @@ So instead of relying on one layer, the instance now has cloud-level and Linux-l
 
 Restricting SSH reduces exposure because random public IPs can no longer attempt to connect.
 The private key is still required, but the Security Group adds another layer of protection.
+
+
+
+## April Day 6 — Understanding Ports 22, 80 and 443
+
+A port decides which service traffic goes to on a server.
+
+```text
+EC2_PUBLIC_IP:22  → SSH
+EC2_PUBLIC_IP:80  → HTTP
+EC2_PUBLIC_IP:443 → HTTPS
+```
+
+### Port 22 — SSH
+
+Port `22` is used for SSH.
+
+This is what I use to connect from my Ubuntu VM into the EC2 instance.
+
+```text
+Ubuntu VM → Internet → EC2:22 → Security Group → firewalld → sshd
+```
+
+Check SSH:
+
+```bash
+sudo systemctl status sshd
+```
+
+### Ports 80 and 443
+
+Port `80` is for HTTP.
+
+Port `443` is for HTTPS.
+
+Right now, I am not hosting a website or dashboard, so these ports do not need to be open.
+
+### Current Setup
+
+```text
+22  → Open only to my public IP
+80  → Closed
+443 → Closed
+```
+
+### Commands Used
+
+```bash
+sudo ss -tuln
+sudo firewall-cmd --list-all
+
+nc -vz EC2_PUBLIC_IP 22
+nc -vz EC2_PUBLIC_IP 80
+nc -vz EC2_PUBLIC_IP 443
+```
+
+### Why This Matters
+Only the ports I actually need should be open.
+For now, SSH is needed, but HTTP and HTTPS are not.
+Keeping unused ports closed reduces the server’s attack surface.
