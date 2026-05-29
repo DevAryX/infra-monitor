@@ -136,6 +136,9 @@ SSH still works because port `22` is open only to my public IP.
 This confirmed that the server is only exposing what it actually needs right now.
 
 
+## April Continues on in cost-notes.md
+
+
 ## Summary
 
 This week made cloud networking feel more real.
