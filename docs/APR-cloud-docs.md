@@ -1,208 +1,84 @@
-## April Day 1 — Public vs Private IPs
+## April Week 1 — Networking and Security
 
-### My Current Setup
+This week was about understanding how my Ubuntu VM actually connects to my EC2 instance, and how to make that access safer.
 
-My local environment uses:
-- Windows 11 as the host machine
-- Ubuntu 22.04 LTS running inside Oracle VM VirtualBox
-- VirtualBox network mode: NAT
-- AWS EC2 instance running Amazon Linux 2023
+## Day 1 — Public vs Private IPs
 
-The Ubuntu VM is used to SSH into the EC2 instance and manage the infra-monitor project.
+My setup is:
 
-### Public IP
-
-A public IP is reachable from the internet.
-In this project, the EC2 public IP is used to connect to the server using SSH.
-
-Example connection flow:
-
-```
-Ubuntu VM → Internet → EC2 Public IP → AWS Security Group → EC2 Instance
+```text
+Windows 11 → Ubuntu VM → Internet → EC2 Instance
 ```
 
-## April Day 2 — VPC, Subnet and Internet Gateway
+The EC2 public IP is what lets me connect to the server using SSH.
 
-### AWS Network Structure
+```text
+Ubuntu VM → EC2 Public IP → Security Group → EC2 Instance
+```
+
+## Day 2 — VPC, Subnet and Internet Gateway
 
 My EC2 instance sits inside an AWS network, not just randomly on the internet.
-
-The basic structure is:
 
 ```text
 AWS VPC → Public Subnet → EC2 Instance
 ```
 
-### VPC
+The Internet Gateway allows the VPC to connect to the internet.
 
-A VPC is like my own private network inside AWS.
-
-It gives the EC2 instance a controlled place to run instead of being directly exposed with no structure.
-
-### Public Subnet
-
-My EC2 instance is inside a public subnet.
-
-I know this because it has a public IPv4 address and I can SSH into it from my Ubuntu VM.
-
-### Internet Gateway
-
-The Internet Gateway is what lets the VPC connect to the internet.
-
-Without it, my EC2 instance would not be reachable from my own machine.
-
-### Route Table
-
-The route table decides where network traffic goes.
-
-For internet access, the important route is:
+The important route is:
 
 ```text
 0.0.0.0/0 → Internet Gateway
 ```
 
-This basically means traffic going out to the internet gets sent through the Internet Gateway.
+This helped me understand that SSH depends on more than just the public IP.
 
-### Architecture Flow
+## Day 3 — Security Groups
 
-```text
-Windows 11 PC
-↓
-Ubuntu VM - VirtualBox NAT
-↓
-Home Router / Public IP
-↓
-Internet
-↓
-AWS Internet Gateway
-↓
-AWS VPC
-↓
-Public Subnet
-↓
-EC2 Instance - Amazon Linux 2023
-```
+A Security Group is basically the AWS firewall for my EC2 instance.
 
-### Why This Matters
-
-This helped me understand that connecting to EC2 depends on more than just the public IP.
-
-Several parts need to work together:
-
-- Public IP
-- Security Group
-- Public Subnet
-- Route Table
-- Internet Gateway
-
-So if SSH breaks, I now know there are multiple network layers to check instead of just assuming the server is broken.
-
-
-
-
-## April Day 3 — Security Groups
-
-A Security Group is like a firewall for my EC2 instance.
-
-It controls what traffic can enter and leave the server.
-
-### SSH Access
-
-My EC2 instance allows SSH on port `22` only from my public IP.
+SSH is only allowed from my own public IP:
 
 ```text
 SSH → Port 22 → My Public IP /32
 ```
 
-Using `/32` means only my exact IP can connect.
-
-This is safer than:
+This is safer than opening SSH to everyone:
 
 ```text
 0.0.0.0/0
 ```
 
-because that would allow anyone on the internet to try SSH.
+## Day 4 — SSH Access Restricted
 
-### Outbound Access
-
-The instance can access the internet using:
+I restricted SSH so only my public IP can reach port `22`.
 
 ```text
-All traffic → 0.0.0.0/0
+Ubuntu VM → Home Public IP → Internet → Security Group → EC2
 ```
 
-This allows updates, package installs, and S3 uploads.
-
-### Connection Flow
-
-```text
-Ubuntu VM → Internet → EC2 Public IP → Security Group → EC2 Instance
-```
-
-To test SSH:
+I tested it with:
 
 ```bash
 nc -vz EC2_PUBLIC_IP 22
 ```
 
-
-
-## April Day 4 — SSH Access Restricted
-
-SSH access to my EC2 instance is now restricted using AWS Security Groups.
-
-Instead of allowing SSH from anywhere:
-
-```text
-SSH → TCP 22 → 0.0.0.0/0
-```
-
-I restricted it to my own public IP:
-
-```text
-SSH → TCP 22 → My Public IP /32
-```
-
-The `/32` means only one exact IP address is allowed.
-
-### SSH Flow
-
-```text
-Ubuntu VM → Home Public IP → Internet → Security Group → EC2 Instance
-```
-
-### Testing
-
-I tested port `22` from my Ubuntu VM:
-
-```bash
-nc -vz EC2_PUBLIC_IP 22
-```
-
-I also confirmed SSH still works:
+And confirmed SSH still works:
 
 ```bash
 ssh -i learning/ssh/infra-monitor-key.pem ec2-user@EC2_PUBLIC_IP
 ```
 
+## Day 5 — Host Firewall
 
-
-## April Day 5 — Host Firewall on Amazon Linux 2023
-
-Today I added another firewall layer inside the EC2 instance itself.
-
-Before traffic reaches SSH, it now goes through two layers:
+I added another firewall layer inside the EC2 instance using `firewalld`.
 
 ```text
-Internet → Security Group → EC2 Host Firewall → SSH
+Internet → Security Group → firewalld → SSH
 ```
 
-The Security Group protects the instance from the AWS side, while the host firewall protects it from inside the Linux server.
-
-On Amazon Linux 2023, I used `firewalld` instead of `ufw`, since `ufw` is more common on Ubuntu.
-
-### Commands Used
+Commands used:
 
 ```bash
 sudo dnf install firewalld -y
@@ -212,64 +88,19 @@ sudo systemctl enable --now firewalld
 sudo firewall-cmd --list-all
 ```
 
-### Current Setup
+This gives the instance cloud-level and Linux-level protection.
+
+## Day 6 — Ports 22, 80 and 443
+
+Ports decide which service traffic goes to.
 
 ```text
-Allowed service: ssh
-Port: 22/tcp
+22  → SSH
+80  → HTTP
+443 → HTTPS
 ```
 
-### Why This Matters
-
-This adds defence in depth.
-
-The Security Group controls access before traffic reaches the EC2 instance, and `firewalld` controls access once traffic reaches the server.
-
-So instead of relying on one layer, the instance now has cloud-level and Linux-level protection.
-
-
-### Why This Matters
-
-Restricting SSH reduces exposure because random public IPs can no longer attempt to connect.
-The private key is still required, but the Security Group adds another layer of protection.
-
-
-
-## April Day 6 — Understanding Ports 22, 80 and 443
-
-A port decides which service traffic goes to on a server.
-
-```text
-EC2_PUBLIC_IP:22  → SSH
-EC2_PUBLIC_IP:80  → HTTP
-EC2_PUBLIC_IP:443 → HTTPS
-```
-
-### Port 22 — SSH
-
-Port `22` is used for SSH.
-
-This is what I use to connect from my Ubuntu VM into the EC2 instance.
-
-```text
-Ubuntu VM → Internet → EC2:22 → Security Group → firewalld → sshd
-```
-
-Check SSH:
-
-```bash
-sudo systemctl status sshd
-```
-
-### Ports 80 and 443
-
-Port `80` is for HTTP.
-
-Port `443` is for HTTPS.
-
-Right now, I am not hosting a website or dashboard, so these ports do not need to be open.
-
-### Current Setup
+Right now, I only need SSH.
 
 ```text
 22  → Open only to my public IP
@@ -277,7 +108,7 @@ Right now, I am not hosting a website or dashboard, so these ports do not need t
 443 → Closed
 ```
 
-### Commands Used
+Commands used:
 
 ```bash
 sudo ss -tuln
@@ -288,7 +119,25 @@ nc -vz EC2_PUBLIC_IP 80
 nc -vz EC2_PUBLIC_IP 443
 ```
 
-### Why This Matters
-Only the ports I actually need should be open.
-For now, SSH is needed, but HTTP and HTTPS are not.
-Keeping unused ports closed reduces the server’s attack surface.
+## Day 7 — Week 1 Reflection
+
+Today was mainly a recap day.
+
+I tested what happens when I try to access the EC2 public IP through a browser. Since I am not running a web server yet, ports `80` and `443` do not respond, which is expected.
+
+SSH still works because port `22` is open only to my public IP.
+
+```text
+22  → SSH allowed
+80  → HTTP closed
+443 → HTTPS closed
+```
+
+This confirmed that the server is only exposing what it actually needs right now.
+
+
+## Summary
+
+This week made cloud networking feel more real.
+I now understand how the connection moves from my Ubuntu VM, through the internet, into AWS, through the Security Group, and finally into the EC2 instance.
+The main improvement was locking down SSH so the server is still usable, but not randomly open to the whole internet.
