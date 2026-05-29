@@ -136,7 +136,25 @@ SSH still works because port `22` is open only to my public IP.
 This confirmed that the server is only exposing what it actually needs right now.
 
 
-## April Continues on in cost-notes.md
+## April Day 8 — Cost Awareness
+
+Today I checked AWS Billing and Cost Management to see what parts of my setup could create charges.
+
+The main things I checked were:
+
+* EC2 running time
+* EBS storage
+* S3 storage
+* Data transfer
+* Forecasted monthly cost
+
+Detailed notes are saved in:
+
+```text
+docs/cost-notes.md
+```
+
+This matters because cloud infrastructure is not just about getting things working. It also needs to be controlled properly so costs do not build up in the background.
 
 
 ## Summary
