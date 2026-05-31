@@ -328,4 +328,50 @@ I also added cleaner error logging so errors are written in a consistent format:
 This makes the logs way easier to read, especially when the script runs again and again through automation.
 
 
+## April Day 13 — Log Rotation
+
+Today I added log rotation to stop the log files from growing forever.
+
+Since the monitoring script can run again and again, the logs need a size limit.
+
+The max log size is controlled with:
+
+```text
+INFRA_MONITOR_MAX_LOG_SIZE
+```
+
+If it is not set, the script uses:
+
+```text
+50000 bytes
+```
+
+When a log gets too big, it gets renamed with a timestamp and a fresh log file is created.
+
+Example:
+
+```text
+system_report_2026-04-13_15-20-44.log
+```
+
+The same rotation function can be used for both logs:
+
+```bash
+rotate_log_file "$LOG_FILE" "system report" "$MAX_SIZE"
+rotate_log_file "$ERROR_LOG" "error" "$MAX_SIZE"
+```
+
+I also cleaned up the S3 logging logic. Since S3 is optional right now, skipping upload is not treated as an error.
+
+### Testing
+
+I tested it by making the log file too large:
+
+```bash
+truncate -s 60000 logs/system_report.log
+./scripts/system_report.sh
+ls -lh logs/
+```
+
+This confirmed the old log was archived and a new one was created.
 
