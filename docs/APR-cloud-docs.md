@@ -157,7 +157,7 @@ docs/cost-notes.md
 This matters because cloud infrastructure is not just about getting things working. It also needs to be controlled properly so costs do not build up in the background.
 
 
-### April Day 9 — Instance Cost Awareness
+## April Day 9 — Instance Cost Awareness
 
 Today I looked at EC2 pricing and instance sizing.
 
