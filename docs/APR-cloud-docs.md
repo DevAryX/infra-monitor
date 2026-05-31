@@ -157,8 +157,16 @@ docs/cost-notes.md
 This matters because cloud infrastructure is not just about getting things working. It also needs to be controlled properly so costs do not build up in the background.
 
 
-## Summary
+### April Day 9 — Instance Cost Awareness
 
-This week made cloud networking feel more real.
-I now understand how the connection moves from my Ubuntu VM, through the internet, into AWS, through the Security Group, and finally into the EC2 instance.
-The main improvement was locking down SSH so the server is still usable, but not randomly open to the whole internet.
+Today I looked at EC2 pricing and instance sizing.
+
+For this project, On-Demand pricing makes the most sense because I am still building and testing the infrastructure. I do not need a long-term reserved setup yet.
+
+I also checked the EC2 instance type and confirmed that a small burstable instance is enough for the current workload.
+
+Detailed notes are saved in:
+
+```text
+docs/cost-notes.md
+```
