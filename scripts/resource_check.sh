@@ -5,8 +5,14 @@
 # Lightweight system resource checker
 # ==========================================
 
-THRESHOLD_CPU=75
-THRESHOLD_MEM=80
+set -euo pipefail
+
+if [ -f "$HOME/.infra-monitor.env" ]; then
+    source "$HOME/.infra-monitor.env"
+fi
+
+THRESHOLD_CPU="${INFRA_MONITOR_CPU_THRESHOLD:-75}"
+THRESHOLD_MEM="${INFRA_MONITOR_MEMORY_THRESHOLD:-80}"
 
 CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
 MEM_USAGE=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
