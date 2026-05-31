@@ -170,3 +170,73 @@ Detailed notes are saved in:
 ```text
 docs/cost-notes.md
 ```
+
+# Environment Variable Notes
+
+## April Day 10 — Linux Environment Variables
+
+Today I worked with Linux environment variables.
+
+Environment variables let scripts use values from outside the code instead of hardcoding everything.
+
+This makes the project easier to move between my Ubuntu VM, EC2, or a future Docker setup.
+
+### Commands Used
+
+```bash
+export TEST_NAME="infra-monitor"
+echo $TEST_NAME
+
+source ~/.infra-monitor.env
+source ~/.bashrc
+```
+
+### Project Env File
+
+I created a project environment file:
+
+```text
+~/.infra-monitor.env
+```
+
+This stores settings like:
+
+* Project path
+* Log directory
+* System log path
+* Error log path
+* CPU threshold
+* Memory threshold
+* Optional S3 bucket name
+
+Example:
+
+```bash
+export INFRA_MONITOR_HOME="$HOME/infra-monitor"
+export INFRA_MONITOR_LOG_DIR="$HOME/infra-monitor/logs"
+export INFRA_MONITOR_CPU_THRESHOLD="80"
+export INFRA_MONITOR_MEMORY_THRESHOLD="80"
+```
+
+### Auto Loading
+
+I added this to `.bashrc` so the variables load automatically:
+
+```bash
+if [ -f "$HOME/.infra-monitor.env" ]; then
+    source "$HOME/.infra-monitor.env"
+fi
+```
+
+### GitHub Safety
+
+The real environment file should not be pushed to GitHub.
+
+Instead, I can include a safe example file:
+
+```text
+.env.example
+```
+
+
+
