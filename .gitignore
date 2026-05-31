@@ -8,11 +8,12 @@
 
 # Logs
 *.log
-
+logs/
 
 # Enviroment files
 .env
-
+*.env
+.infra-monitor.env
 
 # Terraform (future-proofing)
 .terraform/

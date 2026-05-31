@@ -1,16 +1,34 @@
 #!/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+set -euo pipefail
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # ===== System Health Report =====
 
-# Log file
-BASE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-LOG_FILE="$BASE_DIR/logs/system_report.log"
-ERROR_LOG="$BASE_DIR/logs/error.log"
-set -e
+# ===== infra-monitor configuration =====
 
-mkdir -p "$BASE_DIR/logs"
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Load project environment variables if available
+if [ -f "$HOME/.infra-monitor.env" ]; then
+    source "$HOME/.infra-monitor.env"
+fi
+
+INFRA_MONITOR_HOME="${INFRA_MONITOR_HOME:-$BASE_DIR}"
+LOG_DIR="${INFRA_MONITOR_LOG_DIR:-$INFRA_MONITOR_HOME/logs}"
+LOG_FILE="${INFRA_MONITOR_SYSTEM_LOG:-$LOG_DIR/system_report.log}"
+ERROR_LOG="${INFRA_MONITOR_ERROR_LOG:-$LOG_DIR/error.log}"
+
+CPU_THRESHOLD="${INFRA_MONITOR_CPU_THRESHOLD:-80}"
+MEMORY_THRESHOLD="${INFRA_MONITOR_MEMORY_THRESHOLD:-80}"
+DISK_THRESHOLD="${INFRA_MONITOR_DISK_THRESHOLD:-85}"
+MAX_SIZE="${INFRA_MONITOR_MAX_LOG_SIZE:-50000}"
+
+S3_BUCKET="${INFRA_MONITOR_S3_BUCKET:-}"
+S3_KEY="${INFRA_MONITOR_S3_KEY:-system_report.log}"
+
+mkdir -p "$LOG_DIR"
 
 # Colours
 RED="\e[31m"
@@ -71,7 +89,7 @@ print_section "Memory Usage"
 free -h
 free -h >> "$LOG_FILE"
 USED_MEM=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
-status_message "$USED_MEM" 80 "Memory usage"
+status_message "$USED_MEM" "$MEMORY_THRESHOLD" "Memory usage"
 
 # ----------------------------
 # Disk
@@ -80,7 +98,7 @@ print_section "Disk Usage (/)"
 df -h /
 df -h / >> "$LOG_FILE"
 USED_DISK=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
-status_message "$USED_DISK" 85 "Disk usage"
+status_message "$USED_DISK" "$DISK_THRESHOLD" "Disk usage"
 
 # ----------------------------
 # Top Processes
@@ -99,17 +117,20 @@ ip -brief addr show | grep UP >> "$LOG_FILE" || true
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
 echo "" >> "$LOG_FILE"
 
-# Bucket name
-S3_BUCKET="infra-monitor-ary-logs-2026-314146300600-eu-west-2-an"
-if ! aws s3 cp "$LOG_FILE" "s3://$S3_BUCKET/system_report.log"; then
-	echo "S3 upload failed at $(date)" >> "$ERROR_LOG"
+# Upload log to S3 if a bucket is configured
+if [ -n "$S3_BUCKET" ]; then
+    if ! aws s3 cp "$LOG_FILE" "s3://$S3_BUCKET/$S3_KEY"; then
+        echo "S3 upload failed at $(date)" >> "$ERROR_LOG"
+    fi
+else
+    echo "S3 upload skipped at $(date): INFRA_MONITOR_S3_BUCKET not set" >> "$ERROR_LOG"
 fi
 
-MAX_SIZE=50000  # 50KB for Learning
-FILE_SIZE=$(stat -c%s "$LOG_FILE")
+FILE_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
 
 if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
-	mv "$LOG_FILE" "$BASE_DIR/logs/system_report_$(date +%F_%H-%M-%S).log"
-	touch "$LOG_FILE"
+    mv "$LOG_FILE" "$LOG_DIR/system_report_$(date +%F_%H-%M-%S).log"
+    touch "$LOG_FILE"
 fi
+
 
