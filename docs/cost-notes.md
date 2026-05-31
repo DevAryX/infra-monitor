@@ -37,17 +37,4 @@ To avoid random charges, I should:
 * Set budget alerts where possible
 
 
-## April Day 9 — Instance Cost Awareness
-
-Today I looked at EC2 pricing and instance sizing.
-
-For this project, On-Demand pricing makes the most sense because I am still building and testing the infrastructure. I do not need a long-term reserved setup yet.
-
-I also checked the EC2 instance type and confirmed that a small burstable instance is enough for the current workload.
-
-Detailed notes are saved in:
-
-```text
-docs/cost-notes.md
-```
 
