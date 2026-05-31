@@ -36,8 +36,18 @@ To avoid random charges, I should:
 * Check the Billing Dashboard regularly
 * Set budget alerts where possible
 
-### Summary
 
-Today was about cost awareness.
+## April Day 9 — Instance Cost Awareness
 
-I now understand that cloud engineering is not just about making things work. It is also about keeping things controlled, secure, and not accidentally rinsing my bank account over a tiny server.
+Today I looked at EC2 pricing and instance sizing.
+
+For this project, On-Demand pricing makes the most sense because I am still building and testing the infrastructure. I do not need a long-term reserved setup yet.
+
+I also checked the EC2 instance type and confirmed that a small burstable instance is enough for the current workload.
+
+Detailed notes are saved in:
+
+```text
+docs/cost-notes.md
+```
+
