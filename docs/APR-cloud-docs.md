@@ -279,10 +279,53 @@ if [ -f "$HOME/.infra-monitor.env" ]; then
 fi
 ```
 
-### GitHub Safety
+## April Day 12 — Improved Logging Format
 
-The real `.infra-monitor.env` file should not be pushed to GitHub.
+Today I cleaned up the log format in the monitoring script.
 
-Instead, the repo uses `.env.example` to show the structure without exposing real values.
+The logs now show each report in a clearer block, with details like:
+
+* Timestamp
+* Hostname
+* CPU usage
+* Memory usage
+* Disk usage
+* Thresholds
+* Status checks
+* S3 upload result
+
+Example structure:
+
+```text
+==================================================
+[YYYY-MM-DD HH:MM:SS UTC] System Health Report
+Hostname: example-host
+
+CPU Usage: 12%
+Memory Usage: 46%
+Disk Usage: 18%
+
+Thresholds:
+CPU: 80%
+Memory: 80%
+Disk: 85%
+
+Status:
+CPU OK
+Memory OK
+Disk OK
+
+S3 Upload: Success
+==================================================
+```
+
+I also added cleaner error logging so errors are written in a consistent format:
+
+```text
+[YYYY-MM-DD HH:MM:SS UTC] ERROR: message
+```
+
+This makes the logs way easier to read, especially when the script runs again and again through automation.
+
 
 
