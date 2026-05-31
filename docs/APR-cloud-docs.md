@@ -238,5 +238,51 @@ Instead, I can include a safe example file:
 .env.example
 ```
 
+## April Day 11 — Script Refactor Using Environment Variables
+
+Today I refactored the monitoring script so it uses environment variables instead of hardcoded values.
+
+The script can now read settings like:
+
+```text
+INFRA_MONITOR_LOG_DIR
+INFRA_MONITOR_SYSTEM_LOG
+INFRA_MONITOR_ERROR_LOG
+INFRA_MONITOR_CPU_THRESHOLD
+INFRA_MONITOR_MEMORY_THRESHOLD
+INFRA_MONITOR_DISK_THRESHOLD
+INFRA_MONITOR_S3_BUCKET
+```
+
+### Why This Matters
+
+This separates the script from the config.
+
+The script handles the logic, while the environment file controls paths, thresholds, and S3 settings.
+
+This makes the project easier to run on:
+
+* Ubuntu VM
+* Amazon Linux EC2
+* Future Docker setup
+* Future CI/CD setup
+
+### Cron Note
+
+Cron does not always load the same environment as my normal terminal.
+
+To make the script more reliable, it loads the project env file directly:
+
+```bash
+if [ -f "$HOME/.infra-monitor.env" ]; then
+    source "$HOME/.infra-monitor.env"
+fi
+```
+
+### GitHub Safety
+
+The real `.infra-monitor.env` file should not be pushed to GitHub.
+
+Instead, the repo uses `.env.example` to show the structure without exposing real values.
 
 
