@@ -5,12 +5,10 @@ set -euo pipefail
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # ===== System Health Report =====
-
 # ===== infra-monitor configuration =====
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Load project environment variables if available
 if [ -f "$HOME/.infra-monitor.env" ]; then
     source "$HOME/.infra-monitor.env"
 fi
@@ -30,7 +28,56 @@ S3_KEY="${INFRA_MONITOR_S3_KEY:-system_report.log}"
 
 mkdir -p "$LOG_DIR"
 
-# Colours
+HOSTNAME="$(hostname)"
+CPU_STATUS="UNKNOWN"
+MEMORY_STATUS="UNKNOWN"
+DISK_STATUS="UNKNOWN"
+OVERALL_STATUS="OK"
+S3_UPLOAD_RESULT="NOT RUN"
+
+timestamp() {
+    date "+%Y-%m-%d %H:%M:%S %Z"
+}
+
+log_report_header() {
+    {
+        echo "=================================================="
+        echo "[$(timestamp)] System Health Report"
+        echo "Hostname: $HOSTNAME"
+        echo "User: $(whoami)"
+        echo "Project Directory: $INFRA_MONITOR_HOME"
+        echo "Log File: $LOG_FILE"
+        echo "=================================================="
+    } >> "$LOG_FILE"
+}
+
+log_report_footer() {
+    {
+        echo "=================================================="
+        echo ""
+    } >> "$LOG_FILE"
+}
+
+log_error() {
+    echo "[$(timestamp)] ERROR: $1" >> "$ERROR_LOG"
+}
+
+log_summary_block() {
+    {
+        echo "=================================================="
+        echo "Timestamp: $(timestamp)"
+        echo "Hostname: $HOSTNAME"
+        echo "CPU: $CPU_STATUS"
+        echo "Memory: $MEMORY_STATUS"
+        echo "Disk: $DISK_STATUS"
+        echo "Thresholds: CPU=${CPU_THRESHOLD}% Memory=${MEMORY_THRESHOLD}% Disk=${DISK_THRESHOLD}%"
+        echo "Status: $OVERALL_STATUS"
+        echo "S3 Upload: $S3_UPLOAD_RESULT"
+        echo "=================================================="
+        echo ""
+    } >> "$LOG_FILE"
+}
+
 RED="\e[31m"
 GREEN="\e[32m"
 BLUE="\e[34m"
@@ -44,24 +91,36 @@ print_section() {
 }
 
 status_message() {
-    if [ "$1" -ge "$2" ]; then
-        echo -e "${RED}⚠ $3: $1%${RESET}"
-        echo "⚠ $3: $1%" >> "$LOG_FILE"
-    else
-        echo -e "${GREEN}✔ $3 OK: $1%${RESET}"
-        echo "✔ $3 OK: $1%" >> "$LOG_FILE"
+    local usage="$1"
+    local threshold="$2"
+    local label="$3"
+    local state="OK"
+
+    if [ "$usage" -gt "$threshold" ]; then
+        state="HIGH"
+        OVERALL_STATUS="WARN"
     fi
+
+    case "$label" in
+        CPU)
+            CPU_STATUS="$state (${usage}%/${threshold}%)"
+            ;;
+        Memory)
+            MEMORY_STATUS="$state (${usage}%/${threshold}%)"
+            ;;
+        Disk)
+            DISK_STATUS="$state (${usage}%/${threshold}%)"
+            ;;
+    esac
 }
 
 echo -e "${CYAN}${BOLD}SYSTEM HEALTH REPORT${RESET}"
 echo "Date: $(date)"
-echo "Hostname: $(hostname)"
+echo "Hostname: $HOSTNAME"
 echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -o)"
 echo
 
-# Timestamp header in log file
-echo "===== $(date) =====" >> "$LOG_FILE"
-echo "Hostname: $(hostname)" >> "$LOG_FILE"
+log_report_header
 echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -o)" >> "$LOG_FILE"
 
 # ----------------------------
@@ -72,6 +131,9 @@ echo "Model: $(lscpu | grep 'Model name' | sed 's/Model name:\s*//')"
 echo "Cores: $(nproc)"
 echo "Model: $(lscpu | grep 'Model name' | sed 's/Model name:\s*//')" >> "$LOG_FILE"
 echo "Cores: $(nproc)" >> "$LOG_FILE"
+
+CPU_USAGE=$(top -bn1 | awk '/^%Cpu/ {printf "%.0f", 100 - $8}')
+status_message "$CPU_USAGE" "$CPU_THRESHOLD" "CPU"
 
 # ----------------------------
 # Uptime & Load
@@ -89,7 +151,7 @@ print_section "Memory Usage"
 free -h
 free -h >> "$LOG_FILE"
 USED_MEM=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
-status_message "$USED_MEM" "$MEMORY_THRESHOLD" "Memory usage"
+status_message "$USED_MEM" "$MEMORY_THRESHOLD" "Memory"
 
 # ----------------------------
 # Disk
@@ -98,7 +160,7 @@ print_section "Disk Usage (/)"
 df -h /
 df -h / >> "$LOG_FILE"
 USED_DISK=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
-status_message "$USED_DISK" "$DISK_THRESHOLD" "Disk usage"
+status_message "$USED_DISK" "$DISK_THRESHOLD" "Disk"
 
 # ----------------------------
 # Top Processes
@@ -115,16 +177,20 @@ ip -brief addr show | grep UP || true
 ip -brief addr show | grep UP >> "$LOG_FILE" || true
 
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
-echo "" >> "$LOG_FILE"
 
-# Upload log to S3 if a bucket is configured
 if [ -n "$S3_BUCKET" ]; then
-    if ! aws s3 cp "$LOG_FILE" "s3://$S3_BUCKET/$S3_KEY"; then
-        echo "S3 upload failed at $(date)" >> "$ERROR_LOG"
+    if aws s3 cp "$LOG_FILE" "s3://$S3_BUCKET/$S3_KEY"; then
+        S3_UPLOAD_RESULT="Success -> s3://$S3_BUCKET/$S3_KEY"
+    else
+        S3_UPLOAD_RESULT="Failed"
+        log_error "S3 upload failed for $LOG_FILE to s3://$S3_BUCKET/$S3_KEY"
     fi
 else
-    echo "S3 upload skipped at $(date): INFRA_MONITOR_S3_BUCKET not set" >> "$ERROR_LOG"
+    S3_UPLOAD_RESULT="Skipped - INFRA_MONITOR_S3_BUCKET not set"
+    log_error "S3 upload skipped because INFRA_MONITOR_S3_BUCKET is not set"
 fi
+
+log_summary_block
 
 FILE_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
 
@@ -132,5 +198,3 @@ if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
     mv "$LOG_FILE" "$LOG_DIR/system_report_$(date +%F_%H-%M-%S).log"
     touch "$LOG_FILE"
 fi
-
-
