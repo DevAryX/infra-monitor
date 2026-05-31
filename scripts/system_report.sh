@@ -192,9 +192,36 @@ fi
 
 log_summary_block
 
-FILE_SIZE=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
+rotate_log_file() {
+    local file="$1"
+    local label="$2"
+    local size_limit="${3:-$MAX_SIZE}"
 
-if [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
-    mv "$LOG_FILE" "$LOG_DIR/system_report_$(date +%F_%H-%M-%S).log"
-    touch "$LOG_FILE"
-fi
+    if [ ! -f "$file" ]; then
+        return 0
+    fi
+
+    local file_size
+    file_size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+
+    if [ "$file_size" -gt "$size_limit" ]; then
+        local dir
+        local base
+        local stem
+        local archive
+
+        dir="$(dirname "$file")"
+        base="$(basename "$file")"
+        stem="${base%.*}"
+        archive="$dir/${stem}_$(date +%F_%H-%M-%S).log"
+
+        mv "$file" "$archive"
+        touch "$file"
+
+        echo "[$(timestamp)] Rotated $label log: $archive" >> "$file"
+    fi
+}
+
+rotate_log_file "$LOG_FILE" "system report" "$MAX_SIZE"
+rotate_log_file "$ERROR_LOG" "error" "$MAX_SIZE"
+
