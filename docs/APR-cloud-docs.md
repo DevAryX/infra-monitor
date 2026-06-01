@@ -521,38 +521,57 @@ This makes cron easier to troubleshoot.
 If the script works manually but fails through cron, I now have separate logs to see what actually went wrong.
 
 
-April Day 18 — Basic Failure Testing
+## April Day 18 — Basic Failure Testing
 
 Today I tested how the monitoring script handles failure.
 
 The goal was to make sure errors can be captured and the script can recover after something goes wrong.
 
-Failure Test
+### Failure Test
 
-I forced the script to use a restricted log path under /root, which the ec2-user account cannot write to.
+I forced the script to use a restricted log path under `/root`, which the `ec2-user` account cannot write to.
 
+```bash
 HOME=/tmp/infra-monitor-failure \
 INFRA_MONITOR_LOG_DIR="/root/infra-monitor-denied" \
 INFRA_MONITOR_SYSTEM_LOG="/root/infra-monitor-denied/system_report.log" \
 INFRA_MONITOR_ERROR_LOG="/root/infra-monitor-denied/error.log" \
 ./scripts/system_report.sh >> logs/failure_test_stdout.log 2>> logs/failure_test_stderr.log \
 || echo "[$(date)] Expected failure captured during log path test" >> logs/failure_test_stderr.log
-What This Tested
-Permission failure handling
-stdout and stderr logging
-Manual recovery
-Whether errors are easy to trace
-Recovery Test
+```
+
+### What This Tested
+
+* Permission failure handling
+* `stdout` and `stderr` logging
+* Manual recovery
+* Whether errors are easy to trace
+
+### Recovery Test
 
 After the failure test, I reloaded the normal environment:
 
+```bash
 source ~/.infra-monitor.env
+```
 
 Then I ran the script again:
 
+```bash
 ./scripts/system_report.sh >> logs/recovery_stdout.log 2>> logs/recovery_stderr.log
+```
 
 The script worked again and generated a normal report.
+
+### Cron Check
+
+```bash
+crontab -l
+sudo systemctl status crond --no-pager
+```
+
+This confirmed that the script can fail in a controlled way, log the issue, and recover after the correct settings are restored.
+
 
 Cron Check
 crontab -l
