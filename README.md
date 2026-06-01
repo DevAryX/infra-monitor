@@ -122,7 +122,7 @@ aws s3 cp logs/system_report.log s3://your-bucket-name/system_report.log
 ```
 infra-monitor/
 ├── scripts/
-│   ├── resource-check.sh
+│   ├── resource_check.sh
 │   └── system_report.sh
 ├── logs/
 │   ├── system_report.log
@@ -132,13 +132,19 @@ infra-monitor/
 │   ├── cloud-notes.md
 │   ├── ec2-startup-notes.md
 │   ├── git-notes.md
-│   └── log-notes.md  
-├── proof
-│   ├── feb_imgs
-│   └── mar_imgs
+│   ├── log-notes.md
+│   ├── APR-cloud-docs.md
+│   ├── architecture_diagram.png
+│   ├── log-notes.md
+│   └── networking-notes.md
+├── proof/
+│   ├── feb_imgs/
+│   ├── mar_imgs/
+│   └── apr_imgs/
 │ 
 ├── .gitignore
-├── README.md
+├── .env.example
+└── README.md
 ```
 
 ---
@@ -155,26 +161,26 @@ infra-monitor/
 
 ---
 
-## 🛣 Roadmap
+## Roadmap
 
-Next improvements:
+Upcoming improvements:
 
-- Replace cron with **systemd service (Linux daemon)**
-- Upload **rotated logs** to S3 (not just latest)
-- Add **alerting system** (email / Discord)
-- Compress old logs (`.gz`)
-- Infrastructure as Code (Terraform)
-- Monitoring stack (Prometheus + Grafana)
+- May 2026 — Terraform infrastructure as code
+- June 2026 — Docker containerisation
+- July 2026 — GitHub Actions CI/CD
+- August 2026 — Prometheus, Grafana, and security improvements
+- September 2026 — final portfolio polish
+
+Possible technical upgrades:
+
+- Replace cron with a systemd timer or service
+- Compress rotated logs
+- Upload rotated logs to S3
+- Add alerting
+- Add dashboard-based monitoring
 
 ---
 
-## 🧠 Philosophy
-
-This project is intentionally built step-by-step.
-
-Each stage reflects real learning, mistakes, debugging, and improvements, not just copying tutorials.
-
----
 
 ## 📅 March 2026 Milestone
 
@@ -187,6 +193,29 @@ This phase focused on building a **production-style monitoring system**:
 - Log rotation and resource safety
 
 This marks the transition from **learning scripts → building systems**.
+
+---
+
+## April 2026 Infrastructure Improvements
+
+April focused on making the project more realistic from a cloud and operations point of view.
+
+Main improvements:
+
+* Documented public vs private IPs
+* Mapped the EC2 network path through VPC, subnet, route table, and Internet Gateway
+* Restricted SSH access with Security Groups
+* Added Linux firewall protection using `firewalld`
+* Documented ports `22`, `80`, and `443`
+* Reviewed AWS billing and cost risks
+* Added environment-variable based configuration
+* Improved logging format
+* Added configurable log rotation
+* Tested EC2 stop/start behaviour
+* Checked cron after restart
+* Split cron output and error logs
+* Performed basic failure testing and recovery
+* Consolidated networking notes
 
 ---
 
@@ -204,4 +233,4 @@ GitHub: https://github.com/DevAryX
 
 ---
 
-🚀 More features coming soon as the system evolves inshallah.
+More features coming soon as the system evolves inshallah.
