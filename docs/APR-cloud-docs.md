@@ -578,3 +578,26 @@ crontab -l
 sudo systemctl status crond --no-pager
 
 This confirmed that the script can fail in a controlled way, log the issue, and recover after the correct settings are restored.
+
+## April Day 19 — Networking Notes
+
+Today I created a dedicated networking notes file:
+
+```text
+docs/networking-notes.md
+```
+
+This file brings the main networking topics into one place, including:
+
+* Public and private IPs
+* Ubuntu VM NAT
+* VPC and subnet structure
+* Internet Gateway
+* Security Groups
+* SSH restricted with `/32`
+* `firewalld`
+* Ports `22`, `80`, and `443`
+* EC2 stop/start public IP behaviour
+
+This gives the project one clear place for the networking side of the setup instead of having the notes spread everywhere.
+
