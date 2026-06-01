@@ -76,7 +76,7 @@ Ubuntu VM → Internet → AWS VPC → Public Subnet → EC2 Instance
 A basic architecture diagram is available in:
 
 ```text
-docs/architecture-diagram.png
+docs/architecture_diagram.png
 ```
 
 ---
