@@ -475,3 +475,48 @@ This confirmed that the project can survive an EC2 stop/start.
 
 The main thing to watch is the public IP, because if it changes, the SSH command needs updating.
 
+
+## April Day 17 — Cron Output and Error Logging
+
+Today I cleaned up the cron logging setup.
+
+The goal was to make automated runs easier to debug.
+
+Cron can behave differently from a normal terminal, so I made the cron job use full paths and separate log files.
+
+### Cron Command
+
+```cron
+*/5 * * * * /home/ec2-user/infra-monitor/scripts/system_report.sh >> /home/ec2-user/infra-monitor/logs/cron_stdout.log 2>> /home/ec2-user/infra-monitor/logs/cron_stderr.log
+```
+
+Hourly version:
+
+```cron
+0 * * * * /home/ec2-user/infra-monitor/scripts/system_report.sh >> /home/ec2-user/infra-monitor/logs/cron_stdout.log 2>> /home/ec2-user/infra-monitor/logs/cron_stderr.log
+```
+
+### Log Files
+
+```text
+system_report.log → main report
+error.log         → script errors
+cron_stdout.log   → normal cron output
+cron_stderr.log   → cron/shell errors
+```
+
+### Commands Used
+
+```bash
+sudo systemctl status crond --no-pager
+crontab -l
+sudo journalctl -u crond --since "30 minutes ago" --no-pager
+
+tail -n 20 logs/cron_stdout.log
+tail -n 20 logs/cron_stderr.log
+tail -n 40 logs/system_report.log
+```
+This makes cron easier to troubleshoot.
+
+If the script works manually but fails through cron, I now have separate logs to see what actually went wrong.
+
