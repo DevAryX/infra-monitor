@@ -15,7 +15,7 @@ This is no longer just a local script, its a **mini monitoring pipeline**.
 - 📊 System health reporting (CPU, memory, disk, processes, network)
 - 🕒 Automated execution using cron (runs every 5 minutes)
 - 📝 Persistent logging to structured log files
-- ☁️ Automatic upload of logs to AWS S3
+- ☁️ Optional AWS S3 log upload using environment variables
 - ⚠️ Error handling for failed cloud uploads
 - 🔄 Log rotation to prevent disk overuse
 - 🧠 Dynamic paths (portable across systems, no hardcoding)
@@ -102,7 +102,7 @@ This runs the monitoring system every 5 minutes.
 
 ## ☁️ AWS S3 Integration
 
-Logs are automatically uploaded to an S3 bucket.
+S3 upload is supported as an optional feature. If `INFRA_MONITOR_S3_BUCKET` is not set, the script skips S3 upload cleanly.
 
 Requirements:
 
