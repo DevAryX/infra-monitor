@@ -2,43 +2,43 @@
 
 A Linux-based system monitoring and automation project, built step-by-step to learn real-world infrastructure, DevOps workflows, and cloud engineering.
 
-This project evolves from simple Bash scripts into a fully automated, cloud-integrated monitoring system.
+This project started as a simple Bash script and is now turning into a small cloud-integrated monitoring pipeline.
 
 ---
 
-## What this project does (Current State)
+## What This Project Does
 
-This is no longer just a local script, its a **mini monitoring pipeline**.
+This is no longer just a local script. It is a **mini monitoring pipeline**.
 
-### Features:
+### Features
 
-- 📊 System health reporting (CPU, memory, disk, processes, network)
-- 🕒 Automated execution using cron (runs every 5 minutes)
-- 📝 Persistent logging to structured log files
-- ☁️ Optional AWS S3 log upload using environment variables
-- ⚠️ Error handling for failed cloud uploads
-- 🔄 Log rotation to prevent disk overuse
-- 🧠 Dynamic paths (portable across systems, no hardcoding)
+* 📊 System health reporting for CPU, memory, disk, processes, and network
+* 🕒 Automated execution using cron
+* 📝 Structured logging to local log files
+* ☁️ Optional AWS S3 log upload using environment variables
+* ⚠️ Error handling for failed cloud uploads
+* 🔄 Log rotation to prevent logs growing forever
+* 🧠 Dynamic paths so the project is portable across systems
 
 ---
 
 ## Architecture Overview
 
-```
-Cron (every 5 minutes)
-        ↓
+```text
+Cron
+ ↓
 Bash Monitoring Script
-        ↓
-Local Log File (logs/system_report.log)
-        ↓
-S3 Upload (AWS Cloud Storage)
-        ↓
-Rotated Logs (timestamped history)
+ ↓
+Local Log File
+ ↓
+Optional S3 Upload
+ ↓
+Rotated Logs
 ```
 
 ---
 
-## How to run locally
+## How to Run Locally
 
 Clone the repository:
 
@@ -51,6 +51,13 @@ Make scripts executable:
 
 ```bash
 chmod +x scripts/*.sh
+```
+
+Create a local environment file from the example:
+
+```bash
+cp .env.example ~/.infra-monitor.env
+source ~/.infra-monitor.env
 ```
 
 Run the monitoring script manually:
@@ -81,121 +88,6 @@ docs/architecture_diagram.png
 
 ---
 
-
-## ⚙️ Cron Setup (Automation)
-
-Edit your crontab:
-
-```bash
-crontab -e
-```
-
-Add:
-
-```bash
-*/5 * * * * /bin/bash /full/path/to/infra-monitor/scripts/system_report.sh
-```
-
-This runs the monitoring system every 5 minutes.
-
----
-
-## ☁️ AWS S3 Integration
-
-S3 upload is supported as an optional feature. If `INFRA_MONITOR_S3_BUCKET` is not set, the script skips S3 upload cleanly.
-
-Requirements:
-
-- AWS CLI installed
-- EC2 instance with IAM role attached (S3 permissions)
-
-Manual test:
-
-```bash
-aws s3 cp logs/system_report.log s3://your-bucket-name/system_report.log
-```
-
----
-
-## 📂 Project Structure
-
-```
-infra-monitor/
-├── scripts/
-│   ├── resource_check.sh
-│   └── system_report.sh
-├── logs/
-│   ├── system_report.log
-│   ├── system_report_*.log
-│   └── error.log
-├── docs/
-│   ├── cloud-notes.md
-│   ├── ec2-startup-notes.md
-│   ├── git-notes.md
-│   ├── log-notes.md
-│   ├── APR-cloud-docs.md
-│   ├── architecture_diagram.png
-│   ├── log-notes.md
-│   └── networking-notes.md
-├── proof/
-│   ├── feb_imgs/
-│   ├── mar_imgs/
-│   └── apr_imgs/
-│ 
-├── .gitignore
-├── .env.example
-└── README.md
-```
-
----
-
-## What I’ve learned
-
-- Writing production-style Bash scripts
-- Handling failures using `set -e`
-- Designing reliable logging systems
-- Understanding cron and automation
-- Building cloud pipelines using AWS S3
-- Debugging real-world issues (paths, cron environments, permissions)
-- Writing portable scripts using dynamic paths
-
----
-
-## Roadmap
-
-Upcoming improvements:
-
-- May 2026 — Terraform infrastructure as code
-- June 2026 — Docker containerisation
-- July 2026 — GitHub Actions CI/CD
-- August 2026 — Prometheus, Grafana, and security improvements
-- September 2026 — final portfolio polish
-
-Possible technical upgrades:
-
-- Replace cron with a systemd timer or service
-- Compress rotated logs
-- Upload rotated logs to S3
-- Add alerting
-- Add dashboard-based monitoring
-
----
-
-
-## 📅 March 2026 Milestone
-
-This phase focused on building a **production-style monitoring system**:
-
-- Automated monitoring using cron
-- Persistent structured logging
-- Cloud integration with AWS S3
-- Basic failure handling and observability
-- Log rotation and resource safety
-
-This marks the transition from **learning scripts → building systems**.
-
----
-
 ## April 2026 Infrastructure Improvements
 
 April focused on making the project more realistic from a cloud and operations point of view.
@@ -219,18 +111,136 @@ Main improvements:
 
 ---
 
-## ⚠️ Notes
+## Cron Setup
 
-- Logs are intentionally excluded from Git (`.gitignore`)
-- This project is designed to be portable and reproducible
-- Built and tested on AWS EC2 (Linux environment)
+Edit your crontab:
+
+```bash
+crontab -e
+```
+
+Example cron job:
+
+```cron
+*/5 * * * * /home/ec2-user/infra-monitor/scripts/system_report.sh >> /home/ec2-user/infra-monitor/logs/cron_stdout.log 2>> /home/ec2-user/infra-monitor/logs/cron_stderr.log
+```
+
+This runs the monitoring script every 5 minutes and separates normal cron output from cron errors.
 
 ---
 
-## 🔗 Author
+## AWS S3 Integration
+
+S3 upload is optional.
+
+If `INFRA_MONITOR_S3_BUCKET` is not set, the script skips the upload cleanly.
+
+Requirements:
+
+* AWS CLI installed
+* EC2 instance with an IAM role attached
+* S3 permissions configured correctly
+
+Manual test:
+
+```bash
+aws s3 cp logs/system_report.log s3://your-bucket-name/system_report.log
+```
+
+---
+
+## Project Structure
+
+```text
+infra-monitor/
+├── scripts/
+│   ├── resource_check.sh
+│   └── system_report.sh
+├── docs/
+│   ├── APR-cloud-docs.md
+│   ├── architecture_diagram.png
+│   ├── cloud-notes.md
+│   ├── cost-notes.md
+│   ├── ec2-startup-notes.md
+│   ├── git-notes.md
+│   ├── log-notes.md
+│   └── networking-notes.md
+├── proof/
+│   ├── feb_imgs/
+│   ├── mar_imgs/
+│   └── apr_imgs/
+├── logs/                 # generated locally, ignored by Git
+├── .env.example
+├── .gitignore
+└── README.md
+```
+
+---
+
+## What I’ve Learned
+
+* Writing production-style Bash scripts
+* Handling failures with safer script logic
+* Building structured logging systems
+* Using cron for automation
+* Uploading logs to AWS S3
+* Debugging real-world issues with paths, permissions, and cron environments
+* Making scripts portable using environment variables
+* Understanding cloud networking and EC2 security basics
+
+---
+
+## March 2026 Milestone
+
+This phase focused on building a **production-style monitoring system**.
+
+Main improvements:
+
+* Automated monitoring using cron
+* Persistent structured logging
+* AWS S3 integration
+* Basic failure handling
+* Log rotation
+* Resource safety
+
+This marked the shift from **learning scripts** to **building systems**.
+
+---
+
+## Roadmap
+
+Upcoming improvements:
+
+* May 2026 — Terraform infrastructure as code
+* June 2026 — Docker containerisation
+* July 2026 — GitHub Actions CI/CD
+* August 2026 — Prometheus, Grafana, and security improvements
+* September 2026 — final portfolio polish
+
+Possible technical upgrades:
+
+* Replace cron with a systemd timer or service
+* Compress rotated logs
+* Upload rotated logs to S3
+* Add alerting
+* Add dashboard-based monitoring
+
+---
+
+## Notes
+
+* Logs are intentionally excluded from Git using `.gitignore`
+* Real environment files are not committed
+* `.env.example` shows the expected config structure
+* This project is designed to be portable and reproducible
+* Built and tested on AWS EC2 using Amazon Linux 2023
+
+---
+
+## Author
 
 GitHub: https://github.com/DevAryX
 
 ---
 
-More features coming soon as the system evolves inshallah.
+More features coming soon as the system evolves, inshallah.
