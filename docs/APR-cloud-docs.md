@@ -372,6 +372,106 @@ truncate -s 60000 logs/system_report.log
 ./scripts/system_report.sh
 ls -lh logs/
 ```
-
 This confirmed the old log was archived and a new one was created.
+
+
+## April Day 15 — EC2 Stop and Start Behaviour
+
+Today I looked at what happens when an EC2 instance is stopped and started again.
+
+This matters because some parts stay the same, but some details can change.
+
+### Reboot vs Stop vs Terminate
+
+* **Reboot**: restarts the instance
+* **Stop**: shuts it down but keeps the EBS storage
+* **Terminate**: deletes the instance
+
+### What Stays
+
+After stopping and starting the instance, these should still be there:
+
+* Project files
+* Logs on disk
+* Installed packages
+* Cron jobs
+* Security Group
+* `firewalld` setup
+* EBS volume
+
+### What Can Change
+
+The public IPv4 address can change after a stop/start.
+
+So this may stop working:
+
+```bash
+ssh -i learning/ssh/infra-monitor-key.pem ec2-user@OLD_PUBLIC_IP
+```
+
+The fix is to copy the new public IPv4 address from the EC2 console.
+
+### Elastic IP Note
+
+An Elastic IP gives a stable public IP.
+
+I am not using one yet because this project is still in development and I am keeping costs controlled.
+
+### Commands Used
+
+```bash
+hostname -I
+curl -s https://checkip.amazonaws.com
+ls -la ~/infra-monitor
+crontab -l
+sudo firewall-cmd --list-all
+```
+
+## April Day 16 — EC2 Restart Recovery Test
+
+Today I stopped and started my EC2 instance to check if the project still worked after a restart.
+
+This was basically a recovery test.
+
+### What I Checked
+
+Before and after the restart, I checked:
+
+```bash
+hostname -I
+curl -s https://checkip.amazonaws.com
+crontab -l
+sudo systemctl status crond --no-pager
+sudo systemctl status firewalld --no-pager
+```
+
+After the instance came back online, I checked the new public IPv4 address because it can change after a stop/start.
+
+### What Survived
+
+The main setup was still there:
+
+* Project files
+* Scripts
+* Logs
+* Environment file
+* Cron setup
+* `firewalld` rules
+* Security Group rules
+
+### Script Test
+
+```bash
+cd ~/infra-monitor
+source ~/.infra-monitor.env
+bash -n scripts/system_report.sh
+./scripts/system_report.sh
+tail -n 40 logs/system_report.log
+```
+
+The script still ran properly after the restart.
+
+This confirmed that the project can survive an EC2 stop/start.
+
+The main thing to watch is the public IP, because if it changes, the SSH command needs updating.
 
