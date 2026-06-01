@@ -1,4 +1,4 @@
-## April Week 1 — Networking and Security
+## April — Networking and Security
 
 This week was about understanding how my Ubuntu VM actually connects to my EC2 instance, and how to make that access safer.
 
@@ -601,3 +601,61 @@ This file brings the main networking topics into one place, including:
 
 This gives the project one clear place for the networking side of the setup instead of having the notes spread everywhere.
 
+--- 
+
+## April Day 20 — Final Polish
+
+### Goal
+
+Today I completed the final polish for the April cloud polish and networking phase.
+
+The aim was to make the repository match the actual current state of the project and prepare it for the next stage.
+
+### What Was Updated
+
+I reviewed and updated:
+
+- README project description
+- Current feature list
+- Project structure
+- Security posture
+- Configuration notes
+- Documentation index
+- Roadmap
+- April infrastructure summary
+
+### Why This Matters
+
+A project is not only judged by whether it works.
+
+It also needs to be understandable to someone viewing it for the first time.
+
+The README should explain what the project does, how it is structured, what has been learned, and what will be improved next.
+
+### April Summary
+
+April focused on cloud infrastructure understanding and operational thinking.
+
+The main areas covered were:
+
+- AWS EC2 networking
+- Public and private IPs
+- VPCs and subnets
+- Internet Gateway behaviour
+- Security Groups
+- SSH hardening
+- Host firewall configuration
+- Cost awareness
+- Environment variables
+- Structured logging
+- Log rotation
+- Cron reliability
+- EC2 restart testing
+- Basic failure testing
+- Networking documentation
+
+### Day 20 Summary
+
+Today turned the April work into a cleaner portfolio-ready state.
+
+The project now has stronger documentation, a more accurate README, and a clearer explanation of the infrastructure decisions made during April.
