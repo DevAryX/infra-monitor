@@ -82,3 +82,36 @@ infra-monitor runs on the created EC2 instance.
 ```
 
 This takes the project from manual cloud setup to proper Infrastructure as Code.
+
+---
+
+## Day 2 — Installing Terraform
+
+Terraform was installed inside my Ubuntu 22.04 VirtualBox VM.
+
+This VM is my control machine, so Terraform will run from here to manage AWS infrastructure.
+
+I installed Terraform using the official HashiCorp APT repository.
+
+Main steps:
+
+* Updated apt packages
+* Added HashiCorp’s GPG key
+* Added the HashiCorp APT repository
+* Installed Terraform with `apt`
+* Checked it with `terraform version`
+
+Useful commands introduced:
+
+```bash
+terraform init
+terraform validate
+terraform plan
+terraform apply
+terraform destroy
+```
+
+### Result
+
+Terraform is now installed and ready to use from my Ubuntu VM.
+
