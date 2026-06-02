@@ -115,3 +115,46 @@ terraform destroy
 
 Terraform is now installed and ready to use from my Ubuntu VM.
 
+
+## Day 3 — Terraform Basics
+
+Today I created the first Terraform config file for the project:
+
+```text
+terraform/main.tf
+```
+
+This file sets up the basics Terraform needs before it can work with AWS.
+
+It includes:
+
+* Terraform settings
+* Required AWS provider
+* Terraform version requirement
+* AWS region set to `eu-west-2`
+
+The AWS provider tells Terraform which cloud platform to talk to and which region to use.
+
+Example:
+
+```hcl
+provider "aws" {
+  region = "eu-west-2"
+}
+```
+
+This means Terraform will use the London AWS region.
+
+### What I Learned
+
+Terraform uses HCL syntax.
+
+Basic HCL rules:
+
+* Blocks group settings
+* Arguments assign values
+* Strings use quotes
+* Curly braces contain the block body
+
+Later, this setup will be used to create AWS resources like EC2 instances, Security Groups, and output values such as public IP addresses.
+
