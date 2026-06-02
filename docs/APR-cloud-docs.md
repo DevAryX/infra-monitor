@@ -375,6 +375,7 @@ ls -lh logs/
 This confirmed the old log was archived and a new one was created.
 
 
+
 ## April Day 15 — EC2 Stop and Start Behaviour
 
 Today I looked at what happens when an EC2 instance is stopped and started again.
@@ -659,3 +660,36 @@ The main areas covered were:
 Today turned the April work into a cleaner portfolio-ready state.
 
 The project now has stronger documentation, a more accurate README, and a clearer explanation of the infrastructure decisions made during April.
+=======
+
+## April Day 14 — Repository Cleanup
+
+Today I cleaned up and reviewed the repo.
+
+This was not about adding a new feature. It was more about making sure the project stays organised, safe, and easy to understand.
+
+### What I Checked
+
+* Folder structure
+* Scripts
+* Docs
+* Proof screenshots
+* `.gitignore`
+* `.env.example`
+* Log exclusions
+* Environment file safety
+* Script permissions
+* Bash syntax
+
+### Why This Matters
+
+As the project grows, the structure matters more.
+
+A working script is good, but a clean repo makes it easier to debug, explain, and show as a portfolio project.
+
+### Summary
+
+Today was a maintenance day.
+
+The repo is now cleaner and ready for the next part of April, where the focus moves into cron reliability, infrastructure behaviour, and failure testing.
+
