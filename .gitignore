@@ -15,6 +15,14 @@ logs/
 *.env
 .infra-monitor.env
 
-# Terraform (future-proofing)
+# Terraform
 .terraform/
 terraform.tfstate*
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+terraform.tfvars
+
+
+# SSH keys
+*.pem
