@@ -1,6 +1,6 @@
 # Infra Monitor
 
-A Linux-based system monitoring and automation project, built step-by-step to learn real-world infrastructure, DevOps workflows, and cloud engineering.
+This is a Linux-based system monitoring and automation project, which i built step-by-step to learn real-world infrastructure and DevOps
 
 This project started as a simple Bash script and is now turning into a small cloud-integrated monitoring pipeline.
 
@@ -8,7 +8,7 @@ This project started as a simple Bash script and is now turning into a small clo
 
 ## What This Project Does
 
-This is no longer just a local script. It is a **mini monitoring pipeline**.
+This is now a **mini monitoring pipeline**.
 
 ### Features
 
