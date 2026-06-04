@@ -145,16 +145,43 @@ provider "aws" {
 
 This means Terraform will use the London AWS region.
 
-### What I Learned
+## Day 4 — Connecting Terraform to AWS
 
-Terraform uses HCL syntax.
+Today I connected my Ubuntu VM to AWS so Terraform can manage cloud infrastructure from my control machine.
 
-Basic HCL rules:
+The workflow is:
 
-* Blocks group settings
-* Arguments assign values
-* Strings use quotes
-* Curly braces contain the block body
+```text
+Windows 11 PC
+→ Ubuntu VM
+→ AWS CLI
+→ Terraform
+→ AWS Provider
+→ AWS Resources
+```
 
-Later, this setup will be used to create AWS resources like EC2 instances, Security Groups, and output values such as public IP addresses.
+Commands used:
+
+```bash
+aws --version
+aws configure
+aws sts get-caller-identity
+
+terraform init
+terraform validate
+terraform fmt
+terraform plan
+```
+
+`aws sts get-caller-identity` confirmed that the AWS CLI was logged in properly.
+
+`terraform init` downloaded the AWS provider and prepared the Terraform folder.
+
+`terraform validate` confirmed the config was valid.
+
+No infrastructure was created today.
+
+### Result
+
+Terraform can now connect to AWS from my Ubuntu VM and initialise successfully.
 
