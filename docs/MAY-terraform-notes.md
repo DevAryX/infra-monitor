@@ -185,3 +185,40 @@ No infrastructure was created today.
 
 Terraform can now connect to AWS from my Ubuntu VM and initialise successfully.
 
+
+## Day 5 — First Terraform Resource: Security Group
+
+Today I created my first AWS resource using Terraform.
+
+The main resource was a Security Group for the future EC2 instance.
+
+Created:
+
+* `aws_security_group.infra_monitor_sg`
+* SSH inbound rule
+* All outbound traffic rule
+
+The Security Group works like a firewall.
+
+SSH is allowed on port `22`, but only from my current public IP. This is safer than opening SSH to everyone.
+
+Commands used:
+
+```bash
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+terraform state list
+```
+
+### Result
+
+* Terraform resources create real AWS infrastructure
+* Security Groups control inbound and outbound traffic
+* `terraform plan` should be checked before `apply`
+* Terraform state tracks what Terraform created
+
+Terraform successfully created the first Security Group for the infra-monitor project.
+
+
