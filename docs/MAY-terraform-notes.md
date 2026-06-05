@@ -222,3 +222,41 @@ terraform state list
 Terraform successfully created the first Security Group for the infra-monitor project.
 
 
+## Day 6 — Creating an EC2 Instance with Terraform
+
+Today I created an EC2 instance using Terraform.
+
+This was the first actual cloud server in the project created from code.
+
+Added:
+
+* Amazon Linux 2023 AMI lookup
+* `key_name` variable
+* `aws_instance.infra_monitor`
+
+The AMI is loaded dynamically from AWS SSM instead of hardcoding an AMI ID. This keeps the config cleaner and stuff.
+
+The instance uses:
+
+* Amazon Linux 2023
+* `t3.micro`
+* Existing EC2 key pair
+* Terraform Security Group
+* Public IP for SSH
+
+Commands used:
+
+```bash
+aws ec2 describe-key-pairs
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+terraform state list
+terraform state show aws_instance.infra_monitor
+```
+
+### Result
+
+Terraform successfully created an Amazon Linux 2023 EC2 instance for infra-monitor. 
+
