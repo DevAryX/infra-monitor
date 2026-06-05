@@ -18,8 +18,17 @@ variable "allowed_ssh_cidr" {
   type        = string
 }
 
+variable "key_name" {
+  description = "Name of the existing AWS EC2 key pair used for SSH access."
+  type        = string
+}
+
 data "aws_vpc" "default" {
   default = true
+}
+
+data "aws_ssm_parameter" "amazon_linux_2023_ami" {
+  name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 resource "aws_security_group" "infra_monitor_sg" {
@@ -50,4 +59,18 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_outbound" {
   description = "Allow all outbound traffic"
   ip_protocol = "-1"
   cidr_ipv4   = "0.0.0.0/0"
+}
+
+resource "aws_instance" "infra_monitor" {
+  ami                         = data.aws_ssm_parameter.amazon_linux_2023_ami.value
+  instance_type               = "t3.micro"
+  key_name                    = var.key_name
+  vpc_security_group_ids      = [aws_security_group.infra_monitor_sg.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name    = "infra-monitor-ec2"
+    Project = "infra-monitor"
+    Phase   = "may-terraform"
+  }
 }
