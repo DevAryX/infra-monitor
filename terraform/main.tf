@@ -10,17 +10,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "eu-west-2"
-}
-
-variable "allowed_ssh_cidr" {
-  description = "Public IP address allowed to SSH into the EC2 instance, written as a CIDR block."
-  type        = string
-}
-
-variable "key_name" {
-  description = "Name of the existing AWS EC2 key pair used for SSH access."
-  type        = string
+  region = var.aws_region
 }
 
 data "aws_vpc" "default" {
@@ -32,14 +22,15 @@ data "aws_ssm_parameter" "amazon_linux_2023_ami" {
 }
 
 resource "aws_security_group" "infra_monitor_sg" {
-  name        = "infra-monitor-sg"
+  name        = "${var.project_name}-sg"
   description = "Security group for the infra-monitor EC2 instance"
   vpc_id      = data.aws_vpc.default.id
 
   tags = {
-    Name    = "infra-monitor-sg"
-    Project = "infra-monitor"
-    Phase   = "may-terraform"
+    Name        = "${var.project_name}-sg"
+    Project     = var.project_name
+    Phase       = "may-terraform"
+    Environment = var.environment
   }
 }
 
@@ -63,14 +54,15 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_outbound" {
 
 resource "aws_instance" "infra_monitor" {
   ami                         = data.aws_ssm_parameter.amazon_linux_2023_ami.value
-  instance_type               = "t3.micro"
+  instance_type               = var.instance_type
   key_name                    = var.key_name
   vpc_security_group_ids      = [aws_security_group.infra_monitor_sg.id]
   associate_public_ip_address = true
 
   tags = {
-    Name    = "infra-monitor-ec2"
-    Project = "infra-monitor"
-    Phase   = "may-terraform"
+    Name        = "${var.project_name}-ec2"
+    Project     = var.project_name
+    Phase       = "may-terraform"
+    Environment = var.environment
   }
 }
