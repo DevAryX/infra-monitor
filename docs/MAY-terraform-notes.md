@@ -260,3 +260,54 @@ terraform state show aws_instance.infra_monitor
 
 Terraform successfully created an Amazon Linux 2023 EC2 instance for infra-monitor. 
 
+
+
+## Day 7 — Terraform Variables
+
+Today I refactored the Terraform config to use variables.
+
+Created:
+
+* `variables.tf`
+* `terraform.tfvars.example`
+* local `terraform.tfvars`
+
+The real `terraform.tfvars` file stays local and is not pushed to GitHub.
+
+Variables added:
+
+* `aws_region`
+* `project_name`
+* `environment`
+* `instance_type`
+* `allowed_ssh_cidr`
+* `key_name`
+
+Now the config uses values like:
+
+```hcl
+region        = var.aws_region
+instance_type = var.instance_type
+key_name      = var.key_name
+```
+
+Tags also use variables:
+
+```hcl
+Project     = var.project_name
+Environment = var.environment
+```
+
+### What I Learned
+
+Variables make Terraform configs cleaner and easier to reuse.
+
+`variables.tf` defines what values are needed.
+
+`terraform.tfvars` stores my real local values.
+
+`terraform.tfvars.example` shows the safe structure for GitHub.
+
+### Result
+
+The Terraform setup is now more reusable and less hardcoded.
