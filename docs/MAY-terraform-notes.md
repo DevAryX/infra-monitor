@@ -298,7 +298,7 @@ Project     = var.project_name
 Environment = var.environment
 ```
 
-### What I Learned
+### now what happens
 
 Variables make Terraform configs cleaner and easier to reuse.
 
@@ -308,6 +308,40 @@ Variables make Terraform configs cleaner and easier to reuse.
 
 `terraform.tfvars.example` shows the safe structure for GitHub.
 
+The Terraform setup is now more reusable and less hardcoded.
+
+## Day 8 — Terraform Outputs
+
+Today I added Terraform outputs so useful details show after deployment.
+
+Created:
+
+* `outputs.tf`
+
+Outputs added:
+
+* `instance_id`
+* `public_ip`
+* `public_dns`
+* `security_group_id`
+* `ssh_command`
+
+Before this, I had to dig through Terraform state to find things like the EC2 public IP.
+
+Now Terraform shows the important details directly after `terraform apply`.
+
+Commands used:
+
+```bash
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+terraform output
+terraform output -raw public_ip
+terraform output -raw ssh_command
+```
+
 ### Result
 
-The Terraform setup is now more reusable and less hardcoded.
+Terraform now shows the EC2 ID, public IP, public DNS, Security Group ID, and SSH command after deployment.
