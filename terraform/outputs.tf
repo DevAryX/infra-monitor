@@ -20,5 +20,5 @@ output "security_group_id" {
 
 output "ssh_command" {
   description = "SSH command used to connect to the infra-monitor EC2 instance."
-  value       = "ssh -i /home/arham/ssh/infra-monitor-key.pem ec2-user@${aws_instance.infra_monitor.public_ip}"
+  value       = "ssh -i ssh/infra-monitor-key.pem ec2-user@${aws_instance.infra_monitor.public_ip}"
 }

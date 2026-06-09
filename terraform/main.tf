@@ -57,7 +57,7 @@ resource "aws_instance" "infra_monitor" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.infra_monitor_sg.id]
-  #  associate_public_ip_address = true
+  # associate_public_ip_address = true
 
   lifecycle {
     ignore_changes = [ami]
