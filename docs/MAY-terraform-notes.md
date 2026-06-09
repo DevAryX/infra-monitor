@@ -391,3 +391,75 @@ I successfully SSH’d into the Terraform-created EC2 instance.
 This felt like I properly hit the target, because Terraform was not  just creating resources on paper. I could actually connect to the server and prove the infrastructure worked end to end.
 
 
+
+## Day 10 — Terraform Destroy and Rebuild Test
+
+Today was a maddd one.
+
+I tested if the infra-monitor AWS setup could be fully destroyed and rebuilt using Terraform.
+
+This was the moment where Infrastructure as Code properly started to make sense, because the goal was not just to create an EC2 instance once. The goal was to prove I could delete it and bring it back from code. frickin insane.
+
+Commands used:
+
+```bash
+terraform output
+terraform output -raw instance_id
+terraform output -raw public_ip
+terraform plan -destroy
+terraform destroy
+terraform state list
+
+aws ec2 describe-instances
+aws ec2 describe-security-groups
+
+terraform plan
+terraform apply
+terraform output -raw ssh_command
+
+ssh -i ssh/infra-monitor-key.pem ec2-user@PUBLIC_IP
+uname -a
+cat /etc/os-release
+```
+
+### What I Did
+
+First, I recorded the current EC2 details.
+
+Then I ran:
+
+```bash
+terraform plan -destroy
+```
+
+This showed me what Terraform was about to remove before actually deleting anything.
+
+After that, I ran:
+
+```bash
+terraform destroy
+```
+
+Terraform removed the EC2 instance and Security Group it had created.
+
+Then I rebuilt everything nonchalantly again with:
+
+```bash
+terraform apply
+```
+
+After the rebuild, I used the Terraform SSH output and connected back into the new EC2 instance.
+
+### What I Learned
+
+* `terraform destroy` removes infrastructure tracked in Terraform state
+* `terraform plan -destroy` lets me preview the deletion first
+* Rebuilt infrastructure can get a new instance ID and public IP
+* Terraform outputs make the new setup easier to use
+* Infrastructure as Code means the setup can actually be recreated, not just manually built once
+
+### Result
+
+The infra-monitor AWS infrastructure was successfully destroyed and rebuilt using Terraform.
+This felt like a proper target hit moment, because I proved the setup was reproducible. I could delete the server, rebuild it from code, and SSH back into it again. That is when Terraform started feeling real. What a Day.
+
