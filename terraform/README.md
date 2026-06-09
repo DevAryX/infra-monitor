@@ -241,3 +241,33 @@ This was a big step because the project is no longer just running on manually cr
 
 Terraform can now build the base AWS setup properly.
 
+---
+
+## May 2026 Completion Summary
+
+The May Terraform phase is officially complete.
+
+This month, the project moved from manual AWS setup to proper Infrastructure as Code.
+
+Terraform can now:
+
+* Create an EC2 instance
+* Create a Security Group
+* Restrict SSH using my public IP `/32`
+* Add outbound internet access
+* Use variables for cleaner config
+* Output connection details like the public IP and SSH command
+* Destroy and rebuild the infrastructure from code
+* Keep the Terraform setup documented properly
+
+This means the AWS setup is no longer something I just clicked together once in the Console.
+
+It can now be rebuilt from code, which is the whole point.
+
+Final May statement:
+
+> I used Terraform to provision AWS infrastructure for my Linux monitoring project, making the cloud setup reproducible, documented, and easier to rebuild.
+
+May phase done. Big target hit.
+
+
