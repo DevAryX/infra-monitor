@@ -463,3 +463,33 @@ After the rebuild, I used the Terraform SSH output and connected back into the n
 The infra-monitor AWS infrastructure was successfully destroyed and rebuilt using Terraform.
 This felt like a proper target hit moment, because I proved the setup was reproducible. I could delete the server, rebuild it from code, and SSH back into it again. That is when Terraform started feeling real. What a Day.
 
+
+
+## Day 11 — Terraform Documentation
+
+Today I documented the Terraform setup properly.
+
+Created:
+
+* `terraform/README.md`
+
+Updated:
+
+* Main `README.md`
+* `docs/terraform-notes.md`
+
+The Terraform README explains what the setup creates, what each file does, how to deploy it, how to SSH in, and how to destroy or rebuild the infrastructure.
+
+I also documented the main safety rules:
+
+* Do not commit `terraform.tfvars`
+* Do not commit Terraform state files
+* Do not commit `.pem` private keys
+* Keep `.terraform.lock.hcl` committed so provider versions stay consistent
+
+### Result
+
+The Terraform folder now has proper documentation.
+
+Someone else could look at it and understand how the infrastructure works, how to run it, and how to safely rebuild it from code.
+
