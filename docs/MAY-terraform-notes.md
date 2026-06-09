@@ -493,3 +493,29 @@ The Terraform folder now has proper documentation.
 
 Someone else could look at it and understand how the infrastructure works, how to run it, and how to safely rebuild it from code.
 
+
+## Day 12 — Final Terraform Integration
+
+Today I finished the final integration step for the May Terraform phase.
+
+The focus was making sure the Terraform work was clean, documented, and connected properly to the main infra-monitor project.
+
+Final checks:
+
+* Reviewed the main `README.md`
+* Reviewed `terraform/README.md`
+* Checked the Terraform folder structure
+* Confirmed the main config files are in place
+* Checked the SSH output matches my real key path
+* Ran Terraform formatting and validation
+* Reviewed the Terraform plan
+* Updated the docs so May reads as complete
+
+### Result
+
+The infra-monitor project now has a documented Terraform setup that can create, destroy, and rebuild AWS infrastructure from code.
+
+Terraform can create the EC2 instance, Security Group, SSH rule, outbound rule, and useful outputs needed to connect to the server.
+
+This completes the May Infrastructure as Code phase and sets the project up for the June Docker phase.
+
