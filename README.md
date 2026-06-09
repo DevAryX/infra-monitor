@@ -111,6 +111,29 @@ Main improvements:
 
 ---
 
+## May 2026 — Terraform Infrastructure as Code
+
+May focused on moving the AWS setup from manual cloud setup to Terraform-based Infrastructure as Code.
+
+Main improvements:
+
+* Added a dedicated `terraform/` folder
+* Created AWS infrastructure using Terraform instead of manual AWS Console setup
+* Added an EC2 instance resource
+* Added a Terraform-managed Security Group
+* Restricted SSH access using a specific public IP `/32`
+* Added outbound internet access for the instance
+* Added variables for region, project name, environment, instance type, SSH CIDR, and key name
+* Added safe example values using `terraform.tfvars.example`
+* Added Terraform outputs for public IP, public DNS, instance ID, Security Group ID, and SSH command
+* Tested SSH access using Terraform output values
+* Destroyed and rebuilt the infrastructure using Terraform
+* Proved the AWS setup is reproducible from code
+
+This phase moved the project from manually created cloud infrastructure to a setup that can be created, destroyed, and rebuilt properly from Terraform files.
+
+---
+
 ## Cron Setup
 
 Edit your crontab:
@@ -168,7 +191,14 @@ infra-monitor/
 ├── proof/
 │   ├── feb_imgs/
 │   ├── mar_imgs/
-│   └── apr_imgs/
+│   ├── apr_imgs/
+│   └── may_imgs/
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   ├── terraform.tfvars.example
+│   └── README.md
 ├── logs/                 # generated locally, ignored by Git
 ├── .env.example
 ├── .gitignore
