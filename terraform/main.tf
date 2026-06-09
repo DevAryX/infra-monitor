@@ -53,11 +53,16 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_outbound" {
 }
 
 resource "aws_instance" "infra_monitor" {
-  ami                         = data.aws_ssm_parameter.amazon_linux_2023_ami.value
-  instance_type               = var.instance_type
-  key_name                    = var.key_name
-  vpc_security_group_ids      = [aws_security_group.infra_monitor_sg.id]
-  associate_public_ip_address = true
+  ami                    = data.aws_ssm_parameter.amazon_linux_2023_ami.value
+  instance_type          = var.instance_type
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.infra_monitor_sg.id]
+  #  associate_public_ip_address = true
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
+
 
   tags = {
     Name        = "${var.project_name}-ec2"
