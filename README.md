@@ -88,6 +88,21 @@ docs/architecture_diagram.png
 
 ---
 
+## March 2026 Milestone
+
+This phase focused on building a **production-style monitoring system**.
+
+Main improvements:
+
+* Automated monitoring using cron
+* Persistent structured logging
+* AWS S3 integration
+* Basic failure handling
+* Log rotation
+* Resource safety
+
+---
+
 ## April 2026 Infrastructure Improvements
 
 April focused on making the project more realistic from a cloud and operations point of view.
@@ -218,42 +233,24 @@ infra-monitor/
 * Making scripts portable using environment variables
 * Understanding cloud networking and EC2 security basics
 
----
-
-## March 2026 Milestone
-
-This phase focused on building a **production-style monitoring system**.
-
-Main improvements:
-
-* Automated monitoring using cron
-* Persistent structured logging
-* AWS S3 integration
-* Basic failure handling
-* Log rotation
-* Resource safety
-
-This marked the shift from **learning scripts** to **building systems**.
 
 ---
 
 ## Roadmap
 
+Completed phases:
+
+- February 2026 — Git and GitHub foundations
+- March 2026 — AWS EC2 monitoring pipeline
+- April 2026 — Cloud polish, networking, logging, and cost awareness
+- May 2026 — Terraform Infrastructure as Code
+
 Upcoming improvements:
 
-* May 2026 — Terraform infrastructure as code
-* June 2026 — Docker containerisation
-* July 2026 — GitHub Actions CI/CD
-* August 2026 — Prometheus, Grafana, and security improvements
-* September 2026 — final portfolio polish
-
-Possible technical upgrades:
-
-* Replace cron with a systemd timer or service
-* Compress rotated logs
-* Upload rotated logs to S3
-* Add alerting
-* Add dashboard-based monitoring
+- June 2026 — Docker containerisation
+- July 2026 — GitHub Actions CI/CD
+- August 2026 — Prometheus, Grafana, and security improvements
+- September 2026 — final portfolio polish
 
 ---
 
