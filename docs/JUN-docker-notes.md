@@ -118,4 +118,58 @@ docker ps
 Docker Engine is installed, running, and Docker Compose is available through the modern `docker compose` command.
 
 
+## Day 3 — First Container
+
+Today I ran my first Docker container using:
+
+```bash
+docker run hello-world
+```
+
+This tested the basic Docker workflow.
+
+Docker pulled the `hello-world` image, created a container from it, ran it, printed the success message, and then stopped.
+
+Commands used:
+
+```bash
+docker run hello-world
+docker images
+docker ps
+docker ps -a
+docker container prune
+```
+
+### Image vs Container
+
+An image is the saved template.
+
+A container is an instance created from that image.
+
+Simple version:
+
+```text
+Image     → template
+Container → running or stopped instance
+```
+
+The `hello-world` container exits quickly because its only job is to print a message and stop.
+
+That is why `docker ps` does not show it afterwards. To see stopped containers, use:
+
+```bash
+docker ps -a
+```
+
+### Result
+
+Running `hello-world` proved Docker is working properly inside my Ubuntu VM.
+
+It also showed the basic container lifecycle:
+
+```text
+Pull image → Create container → Run container → Exit
+```
+
+This is the same basic flow I will later use for the `infra-monitor` container.
 
