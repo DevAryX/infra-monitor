@@ -173,3 +173,79 @@ Pull image → Create container → Run container → Exit
 
 This is the same basic flow I will later use for the `infra-monitor` container.
 
+
+
+## Day 4 — Container Exploration
+
+Today I went inside an Ubuntu container and explored what it actually looks like.
+
+I started an interactive container with:
+
+```bash
+docker run -it ubuntu bash
+```
+
+The `-it` part gives me a usable terminal inside the container.
+
+Inside the container, I checked:
+
+```bash
+pwd
+ls
+cat /etc/os-release
+```
+
+The prompt changed to something like:
+
+```text
+root@container-id:/#
+```
+
+That showed I was inside the container, not directly on my Ubuntu VM.
+
+### What I Noticed
+
+The container has its own Linux filesystem with folders like:
+
+```text
+bin
+etc
+home
+root
+usr
+var
+```
+
+It feels like a small Linux environment, but it is not a full VM.
+
+Some tools like `git` and `nano` were missing, which makes sense because container images are usually kept minimal.
+
+### Temporary Container Test
+
+I created a test file inside the container:
+
+```bash
+echo "hello from inside the container" > container-test.txt
+```
+
+Then I exited and started a new Ubuntu container.
+
+The file was gone.
+
+That showed me that containers are temporary unless data is stored properly.
+
+Simple lesson:
+
+```text
+Image     → reusable blueprint
+Container → temporary running instance
+Volume    → keeps data persistent
+```
+
+### Result
+
+Today made containers feel more real.
+
+I could see that a container is its own isolated environment, but anything important, like future infra-monitor logs, will need to be stored properly using volumes.
+
+
