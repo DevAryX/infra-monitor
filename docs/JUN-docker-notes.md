@@ -341,3 +341,61 @@ Dockerfile → docker build → Image → docker run → Container output
 This is the same process I’ll use next to containerise the real `infra-monitor` script.
 
 
+
+
+## Day 6 — Containerising `system_report.sh`
+
+Today I containerised the real `infra-monitor` Bash script.
+
+Instead of just running a test message, the Docker image now copies in `system_report.sh` and runs it inside a container.
+
+Image built with:
+
+```bash
+docker build -t infra-monitor -f docker/Dockerfile .
+```
+
+Container run with:
+
+```bash
+docker run --rm infra-monitor
+```
+
+The Dockerfile copies the script into:
+
+```text
+/app/scripts/system_report.sh
+```
+
+Then `CMD` runs it automatically when the container starts.
+
+Main Dockerfile instructions used:
+
+```dockerfile
+FROM ubuntu:22.04
+WORKDIR /app
+COPY scripts/system_report.sh ./scripts/system_report.sh
+CMD ["./scripts/system_report.sh"]
+```
+
+I also added environment variables so the script uses container paths instead of relying on my normal machine paths:
+
+```dockerfile
+ENV INFRA_MONITOR_HOME=/app
+ENV INFRA_MONITOR_LOG_DIR=/app/logs
+ENV INFRA_MONITOR_SYSTEM_LOG=/app/logs/system_report.log
+ENV INFRA_MONITOR_ERROR_LOG=/app/logs/error.log
+```
+
+### Result
+
+Today was the first proper step where `infra-monitor` became containerised.
+
+Current flow:
+
+```text
+Dockerfile → docker build → infra-monitor image → docker run → system_report.sh runs in container
+```
+
+(IVE BEEN TOLD) this is a big step because the actual monitoring script is now packaged inside Docker, not just tested with a basic container.
+
