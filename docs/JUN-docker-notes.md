@@ -485,3 +485,90 @@ docker rmi  → removes an image
 Day 7 made the Docker workflow feel more normal, like I understood it more.
 
 I now understand how to build the image, run a named container, check logs, remove old containers, and avoid clutter using `--rm`.
+
+
+## Day 8 — Docker Volumes and Persistent Logs
+
+Today I worked on making container logs survive after the container is removed.
+
+The problem was simple:
+
+```text
+Container removed → logs inside container removed too
+```
+
+That isnt useful for a monitoring project, cuz logs actually matter.
+
+To fix this, I created a logs folder on the host:
+
+```bash
+mkdir -p logs
+```
+
+Then I ran the container with a bind mount:
+
+```bash
+docker run --rm \
+  --mount type=bind,source="$(pwd)/logs",target=/app/logs \
+  infra-monitor
+```
+
+This connects:
+
+```text
+Host folder:      ./logs
+Container folder: /app/logs
+```
+
+Because the Dockerfile sets the log directory to `/app/logs`, the script writes logs into the mounted host folder.
+
+So even when the container is removed, the logs stay in my project folder. yessir
+
+### Bind Mounts
+
+A bind mount connects a folder from my machine to a folder inside the container.
+
+For `infra-monitor`, this is useful because I can see the logs directly from the Ubuntu VM without digging around inside Docker.
+
+### Named Volumes
+
+I also tested a named Docker volume:
+
+```bash
+docker volume create infra-monitor-logs
+```
+
+Then ran the container with:
+
+```bash
+docker run --rm \
+  --mount type=volume,source=infra-monitor-logs,target=/app/logs \
+  infra-monitor
+```
+
+Simple difference:
+
+```text
+Bind mount   → folder chosen by me
+Named volume → storage managed by Docker
+```
+
+For this project, bind mounts are better during development because the logs are easy to see in the repo.
+
+### Result
+
+on Day 8 I figured that containers should be disposable, but important data should live outside the container.
+
+Current flow:
+
+```text
+infra-monitor container
+↓
+writes logs to /app/logs
+↓
+/app/logs is mounted to ./logs
+↓
+logs survive after the container is removed
+```
+
+
