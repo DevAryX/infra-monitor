@@ -399,3 +399,89 @@ Dockerfile → docker build → infra-monitor image → docker run → system_re
 
 (IVE BEEN TOLD) this is a big step because the actual monitoring script is now packaged inside Docker, not just tested with a basic container.
 
+
+## Day 7 — Docker Build and Run Workflow (Long day)
+
+Today I practised the Docker build and run workflow properly.
+
+I rebuilt the image with:
+
+```bash
+docker build -t infra-monitor -f docker/Dockerfile .
+```
+
+Then I ran the container with a specific name:
+
+```bash
+docker run --name infra-monitor-day7 infra-monitor
+```
+
+After the script finished, the container exited.
+
+`docker ps` did not show it because that only shows running containers.
+
+To see stopped containers as well, I used:
+
+```bash
+docker ps -a
+```
+
+I checked the container output with:
+
+```bash
+docker logs infra-monitor-day7
+```
+
+Then I removed the stopped container with:
+
+```bash
+docker rm infra-monitor-day7
+```
+
+### Key Commands
+
+```text
+docker build   → build an image
+docker images  → list images
+docker run     → create and start a container
+docker ps      → show running containers
+docker ps -a   → show all containers
+docker logs    → view container output
+docker stop    → stop a running container
+docker rm      → remove a stopped container
+docker rmi     → remove an image
+```
+
+### What I Learned
+
+A container can be given a name using `--name`, but container names must be unique.
+
+If a stopped container still exists with that name, Docker will not let me reuse it until I remove the old one.
+
+Important lesson:
+
+```text
+Stopped does not mean deleted.
+```
+
+For quick tests, this is cleaner:
+
+```bash
+docker run --rm infra-monitor
+```
+
+The `--rm` flag removes the container automatically after it exits, so I do not end up with loads of stopped containers sitting around.
+
+Simple cleanup difference:
+
+```text
+docker stop → stops a running container
+docker rm   → removes a stopped container
+docker rmi  → removes an image
+```
+
+### Result
+
+Day 7 made the Docker workflow feel more normal, like I understood it more.
+
+I now understand how to build the image, run a named container, check logs, remove old containers, and avoid clutter using `--rm`.
