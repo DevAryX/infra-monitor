@@ -1,0 +1,9 @@
+.git
+logs
+proof
+terraform/.terraform
+terraform/*.tfstate
+terraform/*.tfstate.backup
+*.png
+*.jpg
+*.jpeg

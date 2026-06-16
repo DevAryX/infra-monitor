@@ -1,0 +1,4 @@
+Hello from the infra-monitor Day 5 Docker image.
+
+This image was built from a custom dockerfile.
+The goal of Day 5 is to understand FROM, WORKDIR, COPY, RUN and CMD.
