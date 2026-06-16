@@ -249,3 +249,95 @@ Today made containers feel more real.
 I could see that a container is its own isolated environment, but anything important, like future infra-monitor logs, will need to be stored properly using volumes.
 
 
+## Day 5 — Dockerfile Basics
+
+Today I created my first custom Docker image using a Dockerfile.
+
+The Dockerfile was saved at:
+
+```text
+docker/Dockerfile
+```
+
+I built the image with:
+
+```bash
+docker build -t infra-monitor-day5 -f docker/Dockerfile .
+```
+
+Then I ran it with:
+
+```bash
+docker run --rm infra-monitor-day5
+```
+
+### Dockerfile Instructions Learned
+
+`FROM` chooses the base image.
+
+For this project, I used:
+
+```dockerfile
+FROM ubuntu:22.04
+```
+
+`WORKDIR` sets the working folder inside the image:
+
+```dockerfile
+WORKDIR /app
+```
+
+`COPY` copies files from my project into the image:
+
+```dockerfile
+COPY docker/day5-message.txt ./day5-message.txt
+```
+
+`RUN` happens while the image is being built:
+
+```dockerfile
+RUN echo "Docker image built successfully for infra-monitor Day 5" > build-info.txt
+```
+
+`CMD` runs when the container starts:
+
+```dockerfile
+CMD ["bash", "-c", "echo 'Custom infra-monitor Docker image is running'; echo; cat day5-message.txt; echo; cat build-info.txt"]
+```
+
+Simple difference:
+
+```text
+RUN → build time
+CMD → container run time
+```
+
+### Build Context
+
+The build command ended with a dot:
+
+```bash
+docker build -t infra-monitor-day5 -f docker/Dockerfile .
+```
+
+The dot means Docker uses the current folder as the build context.
+
+Because I ran it from the repo root, Docker could access files like:
+
+```text
+docker/day5-message.txt
+```
+
+### Result
+
+Okay now I know how a Dockerfile turns project files and instructions into a custom image.
+
+Basic flow:
+
+```text
+Dockerfile → docker build → Image → docker run → Container output
+```
+
+This is the same process I’ll use next to containerise the real `infra-monitor` script.
+
+
