@@ -557,7 +557,7 @@ For this project, bind mounts are better during development because the logs are
 
 ### Result
 
-on Day 8 I figured that containers should be disposable, but important data should live outside the container.
+On Day 8 I figured that containers should be disposable, but important data should live outside the container.
 
 Current flow:
 
@@ -572,3 +572,68 @@ logs survive after the container is removed
 ```
 
 
+## Day 9 — Docker Environment Variables
+
+Today I tested controlling the `infra-monitor` container using environment variables.
+
+First, I ran the container with values passed directly into the command:
+
+```bash
+docker run --rm \
+  -e CPU_THRESHOLD=70 \
+  -e MEMORY_THRESHOLD=70 \
+  -e DISK_THRESHOLD=70 \
+  --mount type=bind,source="$(pwd)/logs",target=/app/logs \
+  infra-monitor
+```
+
+This showed that the same Docker image can be reused with different settings
+
+### Environment File
+
+I also created an environment file:
+
+```text
+docker/day9.env
+```
+
+Example values:
+
+```env
+CPU_THRESHOLD=70
+MEMORY_THRESHOLD=70
+DISK_THRESHOLD=70
+INFRA_MONITOR_SYSTEM_LOG=/app/logs/day9-env-file.log
+INFRA_MONITOR_ERROR_LOG=/app/logs/day9-error.log
+```
+
+Then I ran the container using the env file:
+
+```bash
+docker run --rm \
+  --env-file docker/day9.env \
+  --mount type=bind,source="$(pwd)/logs",target=/app/logs \
+  infra-monitor
+```
+
+### What I Learned
+
+Environment variables let me change how the container behaves without rebuilding the image.
+
+Simple idea:
+
+```text
+Image                 → packaged application
+Environment variables → runtime settings
+```
+
+So the same `infra-monitor` image can run with different thresholds, log files, or settings depending on where it is being used.
+
+
+ALSO: Environment variables are fine for normal config, but secrets like AWS keys should NOT be committed to GitHub or baked into the Docker image.
+
+### Result
+
+On day 9 I made the Docker setup more flexible.
+
+The container can now be configured at runtime instead of needing a new image every time I want to change a setting. Yallah habibi
