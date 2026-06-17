@@ -718,3 +718,66 @@ Dockerfile → Docker image → docker-compose.yml → Compose-managed container
 ```
 
 This makes the setup cleaner because I do not need to keep typing long `docker run` commands every time.
+
+
+
+## Day 12 — Deploying Docker Compose on EC2
+
+Today I ran the containerised `infra-monitor` project on the actual AWS EC2 instance.
+
+Docker was installed on EC2 and started using `systemd`.
+
+Then the project was run with Docker Compose from:
+
+```text
+docker/docker-compose.yml
+```
+
+Main command used:
+
+```bash
+cd docker
+docker compose up -d --build
+```
+
+### What This Proved
+
+The EC2 instance can now run `infra-monitor` as a Docker container.
+
+I checked the container with:
+
+```bash
+docker compose ps
+docker compose logs infra-monitor
+```
+
+I also checked the logs on the EC2 host:
+
+```bash
+ls logs
+tail -n 40 logs/day9-env-file.log
+```
+
+### Current Architecture
+
+```text
+Terraform
+↓
+AWS EC2
+↓
+Docker
+↓
+Docker Compose
+↓
+infra-monitor container
+↓
+persistent logs on EC2
+```
+
+### Result
+
+On day 12 I connected the local Docker work to the real cloud server.
+
+This proved that `infra-monitor` can now run on EC2 inside a container, using Docker Compose instead of a long manual `docker run` command.
+
+Proper big step, because the project is now properly cloud-based and containerised.
