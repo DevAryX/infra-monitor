@@ -637,3 +637,84 @@ ALSO: Environment variables are fine for normal config, but secrets like AWS key
 On day 9 I made the Docker setup more flexible.
 
 The container can now be configured at runtime instead of needing a new image every time I want to change a setting. Yallah habibi
+
+
+## Day 10 — Yaml stuff
+
+all day 10 stuff has been noted down in `yaml-notes.md`.
+
+
+## Day 11 — Docker Compose
+
+Today I started running `infra-monitor` using Docker Compose.
+
+A Compose file was created at:
+
+```text
+docker/docker-compose.yml
+```
+
+The file defines the `infra-monitor` service:
+
+```yaml
+services:
+  infra-monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: infra-monitor
+    container_name: infra-monitor-compose
+    env_file:
+      - day9.env
+    volumes:
+      - ../logs:/app/logs
+```
+
+### What I Learned
+
+The main concept today was `services`.
+
+In Docker Compose, a service is bakisly the container setup written in YAML
+
+For this project, the service is called:
+
+```text
+infra-monitor
+```
+
+This tells Compose to:
+
+* build the image
+* load the env file
+* mount the logs folder
+* run the container
+
+Commands used:
+
+```bash
+cd docker
+docker compose config
+docker compose up --build
+docker compose logs infra-monitor
+docker compose down
+```
+
+Before Compose, I had to run a long `docker run` command with env files and mounts.
+
+Now the same setup can be started with:
+
+```bash
+docker compose up --build
+```
+
+### Result
+
+Day 11 was a big Docker milestone. Alhumdulillah.
+
+The project now flows like this:
+
+```text
+Dockerfile → Docker image → docker-compose.yml → Compose-managed container
+```
+
+This makes the setup cleaner because I do not need to keep typing long `docker run` commands every time.
