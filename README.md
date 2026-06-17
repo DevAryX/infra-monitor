@@ -149,6 +149,26 @@ This phase moved the project from manually created cloud infrastructure to a set
 
 ---
 
+## June 2026 — Docker Containerisation
+
+June focused on making the monitoring app portable using Docker.
+
+Main improvements:
+
+  * Added a dedicated `docker/` folder
+  * Created a Dockerfile for the monitoring script
+  * Built a custom `infra-monitor` Docker image
+  * Ran the monitoring script inside a Docker container
+  * Added persistent logs using Docker volume mounts
+  * Added environment-variable based container configuration
+  * Created a Docker Compose YAML file
+  * Deployed the containerised monitoring service on AWS EC2
+  * Documented the Docker setup in `docker/README.md`
+
+This phase moved the project from a Bash script running directly on a server to a containerised monitoring service that can be run through Docker Compose.
+
+---
+
 ## Cron Setup
 
 Edit your crontab:
@@ -214,6 +234,10 @@ infra-monitor/
 │   ├── outputs.tf
 │   ├── terraform.tfvars.example
 │   └── README.md
+├── docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── README.md
 ├── logs/                 # generated locally, ignored by Git
 ├── .env.example
 ├── .gitignore
@@ -232,7 +256,13 @@ infra-monitor/
 * Debugging real-world issues with paths, permissions, and cron environments
 * Making scripts portable using environment variables
 * Understanding cloud networking and EC2 security basics
-
+* Building Docker images with Dockerfiles
+* Running Bash scripts inside containers
+* Using bind mounts for persistent container logs
+* Passing runtime configuration through environment variables
+* Running containers with Docker Compose
+* Deploying a Docker Compose workload on AWS EC2
+* 
 
 ---
 
@@ -244,10 +274,10 @@ Completed phases:
 - March 2026 — AWS EC2 monitoring pipeline
 - April 2026 — Cloud polish, networking, logging, and cost awareness
 - May 2026 — Terraform Infrastructure as Code
+- June 2026 — Docker containerisation
 
 Upcoming improvements:
 
-- June 2026 — Docker containerisation
 - July 2026 — GitHub Actions CI/CD
 - August 2026 — Prometheus, Grafana, and security improvements
 - September 2026 — final portfolio polish
