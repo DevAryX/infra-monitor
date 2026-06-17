@@ -24,16 +24,24 @@ This is now a **mini monitoring pipeline**.
 
 ## Architecture Overview
 
+This project now runs as a containerised monitoring service on AWS EC2.
+
+The infrastructure is created with Terraform, the monitoring application is packaged with Docker, and Docker Compose is used to run the container on the EC2 instance.
+
+Current architecture:
+
 ```text
-Cron
- ↓
-Bash Monitoring Script
- ↓
-Local Log File
- ↓
-Optional S3 Upload
- ↓
-Rotated Logs
+Terraform
+    ↓
+AWS EC2
+    ↓
+Docker
+    ↓
+Docker Compose
+    ↓
+infra-monitor container
+    ↓
+Persistent logs
 ```
 
 ---
