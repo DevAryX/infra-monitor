@@ -1,0 +1,11 @@
+name: infra-monitor
+version: 1
+description: containerised monitoring service
+tools:
+  - Bash
+  - Docker
+  - Terraform
+  - AWS
+environment:
+  os: Ubuntu
+  location: local VM
