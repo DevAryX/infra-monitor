@@ -781,3 +781,29 @@ On day 12 I connected the local Docker work to the real cloud server.
 This proved that `infra-monitor` can now run on EC2 inside a container, using Docker Compose instead of a long manual `docker run` command.
 
 Proper big step, because the project is now properly cloud-based and containerised.
+
+
+
+## Day 13 — Docker Documentation
+
+On day 13 I focused on documenting the Docker setup.
+
+A Docker README was created at:
+
+```text
+docker/README.md
+```
+
+The documentation explains:
+
+Dockerfile
+Docker Compose file
+Volumes
+Environment variables
+Current Docker workflow
+
+The main README was also updated to include the June Docker containerisation milestone.
+
+This makes the project easier to understand, run, and review as a portfolio project.
+
+boring day but important day
