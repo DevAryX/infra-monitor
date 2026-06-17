@@ -1,0 +1,11 @@
+services:
+  infra-monitor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: infra-monitor
+    container_name: infra-monitor-compose
+    env_file:
+      - day9.env
+    volumes:
+      - ../logs:/app/logs
