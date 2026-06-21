@@ -296,3 +296,68 @@ This is the first proper quality gate in the CI/CD pipeline.
 
 It is a small step, but it makes the project safer because broken Bash code gets caught before it reaches the server.
 
+
+## Day 5 — Docker Build in GitHub Actions
+
+Today I added a Docker build check to the GitHub Actions workflow.
+
+The goal was to make GitHub build the `infra-monitor` Docker image automatically when code is pushed to `main`.
+
+Build command used:
+
+```bash
+docker build -f docker/Dockerfile -t infra-monitor .
+```
+
+### Why This Matters
+
+Before this, I was building the Docker image manually on my Ubuntu VM or EC2.
+
+Now GitHub Actions checks if the image can build before deployment happens.
+
+This can catch issues like:
+
+```text
+broken Dockerfile
+missing files
+wrong paths
+script permission problems
+```
+Mad Stuff now
+
+### Workflow Job
+
+A new job was added for the Docker build.
+
+The important part is:
+
+```yaml
+needs: bash-checks
+```
+
+This means the Docker build only runs if the Bash syntax checks pass first.
+
+### Current CI Flow
+
+```text 
+Push to main
+↓
+Bash scripts checked
+↓
+Docker image built
+↓
+Workflow passes if both checks work
+```
+
+### Result
+
+The project now has two proper CI checks:
+
+```text 
+Bash syntax check
+Docker build check
+```
+
+This makes `infra-monitor` safer because GitHub now checks both the scripts and the Docker image before any future deployment step.
+
+
