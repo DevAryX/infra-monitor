@@ -8,8 +8,18 @@ on:
 
 jobs:
   test:
+    name: Basic Workflow Structure Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print test message
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Print working directory
+        run: pwd
+
+      - name: List repository files
+        run: ls -la
+
+      - name: Confirm GitHub Actions is working
         run: echo "GitHub Actions is working"
