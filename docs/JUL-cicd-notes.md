@@ -232,5 +232,67 @@ Basic commands run
 Result appears in Actions tab
 ```
 
-It is still simple, but this proves the repo can now be accessed inside the GitHub Actions runner. That is the base for later checks like Bash syntax, Docker builds, Compose validation, and EC2 deployment.
+It is still simple, but this proves the repo can now be accessed inside the GitHub Actions runner. That is the base for later checks like Bash syntax, Docker builds, and EC2 deployment and all that.
+
+
+## Day 4 — Bash Syntax Checks
+
+Today I added Bash syntax checks to the GitHub Actions workflow.
+
+This means GitHub now checks the main scripts before anything gets deployed.
+
+Scripts checked:
+
+```text
+scripts/system_report.sh
+scripts/resource_check.sh
+```
+
+Command used:
+
+```bash
+bash -n scripts/system_report.sh
+bash -n scripts/resource_check.sh
+```
+
+### What `bash -n` Does
+
+`bash -n` checks a Bash script for syntax errors without actually running it.
+
+anyway
+
+### Workflow Step
+
+The workflow now checks out the repo, lists the scripts folder, and runs the Bash syntax checks.
+
+```yaml
+- name: Check Bash script syntax
+  run: |
+    bash -n scripts/system_report.sh
+    bash -n scripts/resource_check.sh
+```
+
+### Why This Matters
+
+Before this, a broken Bash script might only be noticed after deploying to EC2.
+
+Now GitHub Actions catches it earlier.
+
+Simple flow:
+
+```text
+Push to main
+↓
+GitHub Actions starts
+↓
+Bash scripts are checked
+↓
+Workflow fails if something is broken
+```
+
+### Result
+
+This is the first proper quality gate in the CI/CD pipeline.
+
+It is a small step, but it makes the project safer because broken Bash code gets caught before it reaches the server.
 
