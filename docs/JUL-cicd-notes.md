@@ -149,3 +149,88 @@ The first workflow ran successfully.
 
 This is the foundation for the CI/CD pipeline. Right now it just proves Actions works, but later it will check Bash scripts, build Docker, validate Compose, and eventually deploy to EC2 automatically.
 
+
+## Day 3 — YAML Workflow Structure
+
+Today I improved the first GitHub Actions workflow and focused on how the YAML structure actually works.
+
+The workflow file is:
+
+```text
+.github/workflows/test.yml
+```
+
+The workflow now:
+
+* Runs when code is pushed to `main`
+* Can be started manually with `workflow_dispatch`
+* Uses an Ubuntu GitHub runner
+* Checks out the repo
+* Runs a few basic test commands
+
+Main structure:
+
+```text
+Workflow
+↓
+Trigger
+↓
+Job
+↓
+Runner
+↓
+Steps
+↓
+Commands or actions
+```
+
+Key parts learned:
+
+```text
+name    → workflow name
+on      → trigger
+jobs    → work to run
+runs-on → runner machine
+steps   → actions or commands
+uses    → prebuilt GitHub Action
+run     → shell command
+```
+
+The important new step was:
+
+```yaml
+uses: actions/checkout@v7
+```
+
+I accidentally set it to *checkout@v4* first, then changed it to *checkout@v7*.
+
+This downloads the repo onto the GitHub runner so the workflow can actually access the project files.
+
+Commands tested inside the workflow:
+
+```yaml
+- run: pwd
+- run: ls -la
+- run: echo "GitHub Actions is working"
+```
+
+### Result
+
+The workflow now checks out the repo, lists the project files, and confirms GitHub Actions is running properly.
+
+Current flow:
+
+```text
+Push to main
+↓
+GitHub Actions starts
+↓
+Repo is checked out
+↓
+Basic commands run
+↓
+Result appears in Actions tab
+```
+
+It is still simple, but this proves the repo can now be accessed inside the GitHub Actions runner. That is the base for later checks like Bash syntax, Docker builds, Compose validation, and EC2 deployment.
+
