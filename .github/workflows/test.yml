@@ -1,4 +1,4 @@
-name: Test GitHub Actions
+name: CI Checks
 
 on:
   push:
@@ -7,19 +7,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Basic Workflow Structure Test
+  bash-checks:
+    name: Bash Syntax Checks
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Print working directory
-        run: pwd
+      - name: Show scripts directory
+        run: ls -la scripts
 
-      - name: List repository files
-        run: ls -la
+      - name: Check Bash script syntax
+        run: |
+          bash -n scripts/system_report.sh
+          bash -n scripts/resource_check.sh
 
-      - name: Confirm GitHub Actions is working
-        run: echo "GitHub Actions is working"
+      - name: Confirm Bash checks passed
+        run: echo "Bash syntax checks passed"
