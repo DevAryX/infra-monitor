@@ -361,3 +361,94 @@ Docker build check
 This makes `infra-monitor` safer because GitHub now checks both the scripts and the Docker image before any future deployment step.
 
 
+
+
+## Day 6 — Docker Compose Validation
+
+Today I added Docker Compose validation to the GitHub Actions workflow.
+
+The goal was to make GitHub check the Compose file before any future deployment happens.
+
+Command used:
+
+```bash
+docker compose -f docker/docker-compose.yml config
+```
+
+### What This Does
+
+`docker compose config` checks the Compose file structure without actually starting the container.
+
+It can catch things like:
+
+```text
+broken YAML
+bad syntax
+missing env files
+wrong paths
+the shabang
+```
+
+### CI Environment File
+
+The Compose file uses:
+
+```yaml
+env_file:
+  - day9.env
+```
+
+Since real env files should not be committed, the workflow creates a temporary one inside the GitHub runner.
+
+Example:
+
+```yaml
+- name: Create CI environment file
+  run: |
+    cat > docker/day9.env <<'EOF'
+    CPU_WARN_THRESHOLD=70
+    MEMORY_WARN_THRESHOLD=70
+    DISK_WARN_THRESHOLD=70
+    INFRA_MONITOR_SYSTEM_LOG=/app/logs/day9-env-file.log
+    INFRA_MONITOR_ERROR_LOG=/app/logs/day9-error.log
+    EOF
+```
+
+This file only exists during the workflow run. It is NOT pushed to GitHub.
+
+### Workflow Order
+
+The Compose validation job uses:
+
+```yaml
+needs: docker-build
+```
+
+This means it only runs after the Docker image build passes.
+
+Current CI flow:
+
+```text
+Push to main
+↓
+Bash scripts checked
+↓
+Docker image built
+↓
+Docker Compose validated
+↓
+Workflow passes
+```
+
+### Result
+
+The project now has three CI quality gates:
+
+```text
+Bash syntax check
+Docker build check
+Docker Compose validation
+```
+
+This makes the pipeline safer because GitHub now checks the scripts, Dockerfile, and Compose setup before deployment gets added. boring but important day.
+
