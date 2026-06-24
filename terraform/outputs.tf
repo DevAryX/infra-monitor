@@ -23,6 +23,11 @@ output "elastic_ip" {
   value       = aws_eip.infra_monitor_eip.public_ip
 }
 
+output "deployment_host" {
+  description = "Stable public IP used by GitHub Actions and SSH deployment."
+  value       = aws_eip.infra_monitor_eip.public_ip
+}
+
 output "ssh_command" {
   description = "SSH command used to connect to the infra-monitor EC2 instance using the Elastic IP."
   value       = "ssh -i ssh/infra-monitor-key.pem ec2-user@${aws_eip.infra_monitor_eip.public_ip}"
