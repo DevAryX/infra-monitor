@@ -452,3 +452,68 @@ Docker Compose validation
 
 This makes the pipeline safer because GitHub now checks the scripts, Dockerfile, and Compose setup before deployment gets added. boring but important day.
 
+
+## Day 7 — GitHub Secrets
+
+Today I added the GitHub Secrets needed for future EC2 deployment through GitHub Actions.
+
+The goal was to keep sensitive deployment values out of the repo.
+
+Secrets added:
+
+```text
+EC2_HOST
+EC2_USER
+EC2_SSH_KEY
+```
+
+What they are for:
+
+```text
+EC2_HOST    → Elastic IP attached to the EC2 instance
+EC2_USER    → SSH user, usually ec2-user
+EC2_SSH_KEY → private SSH key for deployment
+```
+
+`EC2_HOST` stores the Elastic IP address associated with the EC2 instance.
+
+An Elastic IP is used instead of the default EC2 public IP because default public IPv4 addresses can change when an instance is stopped and started.
+
+Using an Elastic IP keeps the GitHub secret stable and stops the deployment workflow from pointing at an old EC2 address.
+
+Before adding the secrets, I tested SSH from my Ubuntu VM:
+
+```bash
+ssh -i ssh/infra-monitor-key.pem ec2-user@EC2_ELASTIC_IP "hostname && whoami && pwd"
+```
+
+This confirmed the host, user, and key were correct.
+
+### Security Notes
+
+Secrets should never be committed to GitHub.
+
+Things like private keys, AWS keys, API tokens, and real `.env` files need to stay protected.
+
+The EC2 instance uses an Elastic IP so the host value stays stable across stop/start cycles.
+
+Manual SSH access is still restricted through the Security Group using a `/32` CIDR rule for my current public IP.
+
+For future deployment from GitHub Actions, the Security Group access method may need to be adjusted because GitHub-hosted runners do not connect from my home IP.
+
+The workflow will later use secrets like this:
+
+```yaml
+${{ secrets.EC2_HOST }}
+${{ secrets.EC2_USER }}
+${{ secrets.EC2_SSH_KEY }}
+```
+
+### Result
+
+The repo is now prepared for GitHub Actions to connect to EC2 securely.
+
+No secret values were committed, and the host value now uses the Elastic IP, so the future deployment setup should be more stable.
+
+A day full of Debugging.
+
