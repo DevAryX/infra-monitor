@@ -57,12 +57,10 @@ resource "aws_instance" "infra_monitor" {
   instance_type          = var.instance_type
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.infra_monitor_sg.id]
-  # associate_public_ip_address = true
 
   lifecycle {
     ignore_changes = [ami]
   }
-
 
   tags = {
     Name        = "${var.project_name}-ec2"
@@ -70,4 +68,19 @@ resource "aws_instance" "infra_monitor" {
     Phase       = "may-terraform"
     Environment = var.environment
   }
+}
+
+resource "aws_eip" "infra_monitor_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name        = "${var.project_name}-eip"
+    Project     = var.project_name
+    Environment = var.environment
+  }
+}
+
+resource "aws_eip_association" "infra_monitor_eip_assoc" {
+  instance_id   = aws_instance.infra_monitor.id
+  allocation_id = aws_eip.infra_monitor_eip.id
 }

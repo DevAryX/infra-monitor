@@ -4,7 +4,7 @@ output "instance_id" {
 }
 
 output "public_ip" {
-  description = "Public IP address of the infra-monitor EC2 instance."
+  description = "Current public IP address of the infra-monitor EC2 instance."
   value       = aws_instance.infra_monitor.public_ip
 }
 
@@ -18,7 +18,12 @@ output "security_group_id" {
   value       = aws_security_group.infra_monitor_sg.id
 }
 
+output "elastic_ip" {
+  description = "Elastic IP address attached to the infra-monitor EC2 instance."
+  value       = aws_eip.infra_monitor_eip.public_ip
+}
+
 output "ssh_command" {
-  description = "SSH command used to connect to the infra-monitor EC2 instance."
-  value       = "ssh -i ssh/infra-monitor-key.pem ec2-user@${aws_instance.infra_monitor.public_ip}"
+  description = "SSH command used to connect to the infra-monitor EC2 instance using the Elastic IP."
+  value       = "ssh -i ssh/infra-monitor-key.pem ec2-user@${aws_eip.infra_monitor_eip.public_ip}"
 }
