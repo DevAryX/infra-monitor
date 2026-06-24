@@ -517,3 +517,28 @@ No secret values were committed, and the host value now uses the Elastic IP, so 
 
 A day full of Debugging.
 
+### Hollup, first we do Day 8 Security Group Considerations
+
+The EC2 Security Group currently allows SSH only from my home public IP using a `/32` CIDR rule.
+
+This is good for manual SSH from my Ubuntu VM, but GitHub Actions runners do not run from my home network.
+
+For the GitHub Actions SSH test, the workflow will need to temporarily allow the current GitHub runner public IP on port 22, run the SSH command, and then remove that temporary rule afterwards.
+
+Planned Day 8 flow:
+
+```text
+GitHub Actions runner starts
+↓
+Runner public IP is detected
+↓
+Temporary SSH rule is added to the EC2 Security Group
+↓
+GitHub Actions SSHs into EC2
+↓
+Temporary SSH rule is removed
+```
+
+This avoids permanently opening SSH to 0.0.0.0/0. aye that would be bad cuz
+
+Long term, AWS SSM Session Manager or GitHub *OIDC* would be a cleaner approach because they can reduce reliance on inbound SSH rules and long-lived credentials.
