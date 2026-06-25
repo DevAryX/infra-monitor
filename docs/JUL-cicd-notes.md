@@ -706,4 +706,86 @@ EC2 has a deploy script ready
 
 This sets up the next step: letting GitHub Actions trigger the deploy script automatically. hella long day
 
+---
 
+## Day 10 — Trigger Deploy From GitHub Actions
+
+Today I connected GitHub Actions to the EC2 deployment script.
+
+The goal was to move from manual deployment to automated deployment.
+
+Before this, I had to SSH into EC2 and run:
+
+```
+bash ~/deploy-infra-monitor.sh
+```
+
+Now GitHub Actions can run that command automatically after the CI checks pass.
+
+### Deployment Flow
+
+```
+Push to main
+↓
+CI checks run
+↓
+Docker build is checked
+↓
+Docker Compose is validated
+↓
+GitHub Actions SSHs into EC2
+↓
+EC2 runs the deploy script
+↓
+infra-monitor is pulled, rebuilt, and restarted
+```
+
+The command run on EC2 is:
+
+```
+bash ~/deploy-infra-monitor.sh
+```
+
+The deploy script handles the actual server update:
+
+```
+cd ~/infra-monitor
+git pull origin main
+docker compose up -d --build
+docker compose ps
+```
+
+### Why This Matters
+
+This is the first proper deployment automation milestone.
+
+Instead of manually logging into the server and typing commands, a push to GitHub can now trigger the update process.
+
+That makes deployment:
+
+```
+more repeatable
+less manual
+cleaner to debug
+closer to real CI/CD
+```
+
+### Result
+
+GitHub Actions successfully triggered the deployment script on EC2.
+
+Current CI/CD path:
+
+```
+GitHub push
+↓
+GitHub Actions
+↓
+EC2 deploy script
+↓
+Docker Compose redeploy
+↓
+infra-monitor runs the latest version
+```
+
+This is my main July milestone. The project now has a working CI/CD deployment path. Alhumdulillah
