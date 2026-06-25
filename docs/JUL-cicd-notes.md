@@ -542,3 +542,79 @@ Temporary SSH rule is removed
 This avoids permanently opening SSH to 0.0.0.0/0. aye that would be bad cuz
 
 Long term, AWS SSM Session Manager or GitHub *OIDC* would be a cleaner approach because they can reduce reliance on inbound SSH rules and long-lived credentials.
+
+
+
+## Day 8 — First SSH From GitHub Actions
+
+Today I tested SSH from GitHub Actions into my EC2 instance.
+
+The goal was simple, i had to prove that GitHub Actions can reach the server and run basic Linux commands remotely.
+
+Commands tested on EC2:
+
+```bash
+hostname
+whoami
+pwd
+```
+
+### Security Group Issue
+
+My EC2 Security Group only allows SSH from my home public IP using a `/32` rule.
+
+That works from my Ubuntu VM, but GitHub-hosted runners do not use my home IP.
+
+To handle this without opening SSH to the whole internet, the workflow temporarily allows the GitHub runner’s current public IP on port `22`.
+
+Flow:
+
+```text
+GitHub Actions runner starts
+↓
+Runner public IP is detected
+↓
+Temporary SSH rule is added
+↓
+GitHub Actions connects to EC2
+↓
+Remote commands run
+↓
+Temporary SSH rule is removed
+```
+
+### Secrets Used
+
+```text
+EC2_HOST
+EC2_USER
+EC2_SSH_KEY
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_REGION
+EC2_SECURITY_GROUP_ID
+```
+
+`EC2_HOST` uses the Elastic IP attached to the EC2 instance, so the SSH host stays stable even after stop/start cycles.
+
+### Result
+
+GitHub Actions can now SSH into the EC2 instance and run commands.
+
+Current July flow:
+
+```text
+Push to main
+↓
+Bash checks
+↓
+Docker build
+↓
+Compose validation
+↓
+SSH into EC2
+↓
+Remote commands run successfully
+```
+
+This was a big CI/CD step, because the pipeline can now actually communicate with the cloud server instead of just running checks on GitHub.
