@@ -618,3 +618,92 @@ Remote commands run successfully
 ```
 
 This was a big CI/CD step, because the pipeline can now actually communicate with the cloud server instead of just running checks on GitHub.
+
+
+## Day 9 — Manual Deploy Script
+
+Today I created a manual deployment script on the EC2 instance.
+
+The script was created at:
+
+```text
+~/deploy-infra-monitor.sh
+```
+
+Before this, deployment meant manually running each command one by one:
+
+```bash
+cd ~/infra-monitor
+git pull origin main
+docker compose -f docker/docker-compose.yml up -d --build
+docker compose -f docker/docker-compose.yml ps
+```
+
+Now those steps are inside one script.
+
+### Deploy Script
+
+```bash
+#!/usr/bin/env bash
+
+cd ~/infra-monitor
+
+echo "Starting infra-monitor deployment..."
+echo "Current user: $(whoami)"
+echo "Current host: $(hostname)"
+echo "Current directory: $(pwd)"
+
+echo "Pulling latest code from main..."
+git pull origin main
+
+echo "Rebuilding and starting Docker Compose service..."
+docker compose -f docker/docker-compose.yml up -d --build
+
+echo "Current Docker Compose status:"
+docker compose -f docker/docker-compose.yml ps
+
+echo "Deployment finished."
+```
+
+*It may be a slight bit different and modified now, but this is the gist of it.*
+
+### What It Does
+
+The script:
+
+* Goes into the EC2 project folder
+* Pulls the latest code from GitHub
+* Rebuilds and starts the Docker Compose service
+* Shows the current container status
+
+### Why This Matters
+
+This makes deployment repeatable.
+
+Instead of GitHub Actions later running loads of SSH commands, it can just run:
+
+```bash
+bash ~/deploy-infra-monitor.sh
+```
+
+Much cleaner.
+
+### Result
+
+The script was tested manually on EC2 and successfully redeployed the Docker Compose service.
+
+Current July flow:
+
+```text
+Push to main
+↓
+CI checks run
+↓
+GitHub Actions can SSH into EC2
+↓
+EC2 has a deploy script ready
+```
+
+This sets up the next step: letting GitHub Actions trigger the deploy script automatically. hella long day
+
+
