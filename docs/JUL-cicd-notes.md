@@ -789,3 +789,30 @@ infra-monitor runs the latest version
 ```
 
 This is my main July milestone. The project now has a working CI/CD deployment path. Alhumdulillah
+
+but, but
+
+### Current Limitation — EC2 Bootstrapping
+
+The current CI/CD deployment assumes that the EC2 instance has already been prepared manually.
+
+This means the server must already have:
+
+```text
+Git
+Docker
+Docker Compose
+~/infra-monitor
+~/deploy-infra-monitor.sh
+```
+
+If the EC2 instance is replaced, GitHub Actions can still connect if the Elastic IP and Security Group are preserved, but deployment will fail unless the new server has been set up again.
+
+This means the EC2 instance is not fully disposable yet.
+
+A future improvement is to add Terraform user_data so a new EC2 instance automatically installs dependencies, clones the repository, creates the deployment script, and becomes ready for GitHub Actions deployment without manual SSH setup.
+
+---
+
+
+
