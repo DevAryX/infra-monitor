@@ -906,5 +906,59 @@ Deploy script runs safety checks
 infra-monitor redeploys
 ```
 
-This makes the pipeline more reliable because the script now fails early and clearly instead of exploding halfway through like a mystery crime scene.
+This makes the pipeline more reliable because the script now fails early and clearly instead of exploding halfway cuz.
 
+
+## Day 12 — Deployment Logs
+
+Today I added deployment logging to the EC2 deploy script.
+
+Deployments are now logged to:
+
+```text
+~/infra-monitor/logs/deploy.log
+```
+
+The script creates the logs folder if it does not exist:
+
+```bash
+mkdir -p "$LOG_DIR"
+```
+
+Then it sends output through `awk` and `tee` so every line gets a timestamp and is saved:
+
+```bash 
+exec > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' | tee -a "$LOG_FILE") 2>&1
+```
+
+### Why This Matters
+
+Before this, I could see deployment output in GitHub Actions, but the EC2 server did not keep its own deployment history.
+
+Now I can check previous deployments with:
+
+```bash
+tail -n 60 ~/infra-monitor/logs/deploy.log
+```
+
+### Current Flow
+
+```text 
+GitHub Actions SSHs into EC2
+↓
+Deploy script runs
+↓
+Safety checks happen
+↓
+Output gets timestamped
+↓
+Logs are saved to deploy.log
+↓
+Docker Compose redeploys infra-monitor
+```
+
+### Result
+
+The deployment process is now more traceable.
+
+I can now prove when deployments happened from the EC2 server itself, instead of relying only on GitHub Actions logs.
