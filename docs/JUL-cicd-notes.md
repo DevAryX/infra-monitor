@@ -962,3 +962,70 @@ Docker Compose redeploys infra-monitor
 The deployment process is now more traceable.
 
 I can now prove when deployments happened from the EC2 server itself, instead of relying only on GitHub Actions logs.
+
+
+## Day 13 — README update
+
+just updated the readme tbh
+
+
+## Day 14 — Final Proof and LinkedIn Angle
+
+Today I collected final proof for the July CI/CD phase.
+
+The pipeline now checks, builds, validates, and deploys `infra-monitor`.
+
+Final CI/CD flow:
+
+```text 
+Push to main
+↓
+GitHub Actions runs
+↓
+Bash scripts are checked
+↓
+Docker image is built
+↓
+Docker Compose is validated
+↓
+GitHub Actions SSHs into EC2
+↓
+EC2 runs the deploy script
+↓
+infra-monitor is rebuilt and restarted
+↓
+Deployment output is saved to deploy.log
+```
+
+### Final Proof
+
+Proof collected:
+
+```text 
+successful GitHub Actions workflow
+container running on EC2
+deployment log with timestamp
+```
+
+This proves the July pipeline is working end-to-end.
+
+### LinkedIn Angle
+
+The main angle is simple:
+
+```text 
+I moved infra-monitor from manual deployment to a GitHub Actions CI/CD pipeline.
+```
+
+Before July, deployment was manual.
+
+Now, a push to GitHub can trigger checks, Docker validation, SSH deployment, and a container restart on EC2.
+
+### Result
+
+July is complete. 
+
+`infra-monitor` is now a CI/CD-enabled cloud service, not just a container running on a server.
+
+Big step cuzzies. This is where the project starts feeling like a proper DevOps pipeline i hope i think.
+
