@@ -19,6 +19,9 @@ This is now a **mini monitoring pipeline**.
 * ⚠️ Error handling for failed cloud uploads
 * 🔄 Log rotation to prevent logs growing forever
 * 🧠 Dynamic paths so the project is portable across systems
+* 🚀 CI/CD deployment using GitHub Actions
+* 🔐 GitHub Secrets for deployment credentials
+* 📦 Automated Docker build and Compose validation
 
 ---
 
@@ -33,11 +36,13 @@ Current architecture:
 ```text
 Terraform
     ↓
-AWS EC2
+AWS EC2 + Elastic IP
     ↓
 Docker
     ↓
 Docker Compose
+    ↓
+GitHub Actions CI/CD
     ↓
 infra-monitor container
     ↓
@@ -177,6 +182,32 @@ This phase moved the project from a Bash script running directly on a server to 
 
 ---
 
+## July 2026 — CI/CD with GitHub Actions
+
+July focused on adding CI/CD so the project could move from manual deployment to automated deployment.
+
+Main improvements:
+
+* Added a GitHub Actions workflow in `.github/workflows/test.yml`
+* Triggered the workflow on pushes to `main`
+* Added manual workflow runs using `workflow_dispatch`
+* Added Bash syntax checks for project scripts
+* Added a Docker image build check
+* Added Docker Compose validation
+* Added GitHub Secrets for EC2 deployment values
+* Used the EC2 Elastic IP as the stable deployment host
+* Tested SSH from GitHub Actions into EC2
+* Temporarily allowed the GitHub Actions runner IP through the Security Group during deployment
+* Created an EC2 deployment script at `~/deploy-infra-monitor.sh`
+* Added a repo copy of the deploy script at `scripts/deploy-infra-monitor.sh`
+* Added safety checks to the deploy script
+* Added timestamped deployment logs at `~/infra-monitor/logs/deploy.log`
+* Triggered the EC2 deployment script from GitHub Actions
+
+This phase moved the project from a containerised monitoring service to a CI/CD-enabled cloud service that can be checked, rebuilt, and redeployed through GitHub Actions.
+
+---
+
 ## Cron Setup
 
 Edit your crontab:
@@ -220,6 +251,7 @@ aws s3 cp logs/system_report.log s3://your-bucket-name/system_report.log
 ```text
 infra-monitor/
 ├── scripts/
+│   ├── deploy-infra-monitor.sh
 │   ├── resource_check.sh
 │   └── system_report.sh
 ├── docs/
@@ -247,6 +279,9 @@ infra-monitor/
 │   ├── docker-compose.yml
 │   └── README.md
 ├── logs/                 # generated locally, ignored by Git
+├── .github/
+│   └── workflows/
+│       └── test.yml
 ├── .env.example
 ├── .gitignore
 └── README.md
@@ -270,7 +305,13 @@ infra-monitor/
 * Passing runtime configuration through environment variables
 * Running containers with Docker Compose
 * Deploying a Docker Compose workload on AWS EC2
-* 
+* Creating GitHub Actions workflows
+* Running CI checks for Bash scripts
+* Building Docker images in CI
+* Validating Docker Compose in CI
+* Using GitHub Secrets safely
+* Deploying to EC2 through GitHub Actions
+* Adding deployment safety checks and logs
 
 ---
 
@@ -283,10 +324,10 @@ Completed phases:
 - April 2026 — Cloud polish, networking, logging, and cost awareness
 - May 2026 — Terraform Infrastructure as Code
 - June 2026 — Docker containerisation
+- July 2026 — GitHub Actions CI/CD
 
 Upcoming improvements:
 
-- July 2026 — GitHub Actions CI/CD
 - August 2026 — Prometheus, Grafana, and security improvements
 - September 2026 — final portfolio polish
 
