@@ -22,6 +22,7 @@ jobs:
         run: |
           bash -n scripts/system_report.sh
           bash -n scripts/resource_check.sh
+          bash -n scripts/deploy-infra-monitor.sh
 
       - name: Confirm Bash checks passed
         run: echo "Bash syntax checks passed"
