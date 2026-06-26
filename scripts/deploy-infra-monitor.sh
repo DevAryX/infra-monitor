@@ -4,6 +4,8 @@ set -euo pipefail
 PROJECT_DIR="$HOME/infra-monitor"
 COMPOSE_FILE="$PROJECT_DIR/docker/docker-compose.yml"
 ENV_FILE="$PROJECT_DIR/docker/day9.env"
+LOG_DIR="$PROJECT_DIR/logs"
+LOG_FILE="$LOG_DIR/deploy.log"
 
 fail() {
   echo "ERROR: $1" >&2
@@ -14,9 +16,16 @@ info() {
   echo "==> $1"
 }
 
-info "Starting infra-monitor deployment safety checks..."
-
 [ -d "$PROJECT_DIR" ] || fail "Project directory not found: $PROJECT_DIR"
+
+mkdir -p "$LOG_DIR"
+
+exec > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' | tee -a "$LOG_FILE") 2>&1
+
+info "============================================================"
+info "Starting infra-monitor deployment"
+info "Log file: $LOG_FILE"
+
 [ -d "$PROJECT_DIR/.git" ] || fail "Project directory exists but is not a Git repository: $PROJECT_DIR"
 
 command -v git >/dev/null 2>&1 || fail "Git is not installed"
@@ -56,4 +65,5 @@ docker compose -f "$COMPOSE_FILE" up -d --build
 info "Current Docker Compose status:"
 docker compose -f "$COMPOSE_FILE" ps
 
-info "Deployment finished."
+info "Deployment finished successfully"
+info "============================================================"
