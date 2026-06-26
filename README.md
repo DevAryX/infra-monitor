@@ -256,6 +256,10 @@ infra-monitor/
 │   └── system_report.sh
 ├── docs/
 │   ├── APR-cloud-docs.md
+│   ├── MAY-terraform-docs.md
+│   ├── JUN-docker-docs.md
+│   ├── JUL-cicd-docs.md
+│   ├── yaml-notes.md
 │   ├── architecture_diagram.png
 │   ├── cloud-notes.md
 │   ├── cost-notes.md
