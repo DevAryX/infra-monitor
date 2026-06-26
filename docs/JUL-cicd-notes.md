@@ -815,4 +815,96 @@ A future improvement is to add Terraform user_data so a new EC2 instance automat
 ---
 
 
+## Day 11 — Deployment Safety Checks
+
+Today I improved the EC2 deployment script so it fails clearly if something is missing.
+
+The script now uses:
+
+```bash
+set -euo pipefail
+```
+
+Meaning:
+
+```text 
+set -e   → stop if a command fails
+set -u   → stop if a variable is missing
+pipefail → fail properly in pipelines
+```
+
+### Safety Checks Added
+
+The deploy script now checks for:
+
+```text 
+project folder
+Git repo
+Git installed
+Docker installed
+Docker daemon running
+Docker Compose available
+Compose file
+required env file
+```
+
+### Why This Matters
+
+Before this, the script assumed the EC2 server was ready.
+
+Now it checks first, then deploys.
+
+Flow:
+
+```text 
+Start deploy script
+↓
+Run safety checks
+↓
+Fail clearly if something is missing
+↓
+Pull latest code
+↓
+Validate Compose
+↓
+Rebuild and restart container
+↓
+Show service status
+```
+
+### Repo Copy
+
+A copy of the deploy script was also added to the repo:
+
+```text
+scripts/deploy-infra-monitor.sh
+```
+
+The live EC2 script still runs from:
+
+```text 
+~/deploy-infra-monitor.sh
+```
+
+The repo copy makes the deployment logic easier to see, reuse, and later connect with Terraform bootstrapping.
+
+### Result
+
+The deployment process is now safer and easier to debug.
+
+Current flow:
+
+```text
+Push to main
+↓
+CI checks run
+↓
+GitHub Actions SSHs into EC2
+↓
+Deploy script runs safety checks
+↓
+infra-monitor redeploys
+```
+
+This makes the pipeline more reliable because the script now fails early and clearly instead of exploding halfway through like a mystery crime scene.
 
