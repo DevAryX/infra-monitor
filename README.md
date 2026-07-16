@@ -271,7 +271,9 @@ infra-monitor/
 │   ├── feb_imgs/
 │   ├── mar_imgs/
 │   ├── apr_imgs/
-│   └── may_imgs/
+│   ├── may_imgs/
+│   ├── jun_imgs/
+│   └── jul_imgs/
 ├── terraform/
 │   ├── main.tf
 │   ├── variables.tf
