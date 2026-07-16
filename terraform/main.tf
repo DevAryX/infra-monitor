@@ -58,6 +58,9 @@ resource "aws_instance" "infra_monitor" {
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.infra_monitor_sg.id]
 
+  user_data                   = file("${path.module}/user_data.sh")
+  user_data_replace_on_change = true
+
   lifecycle {
     ignore_changes = [ami]
   }
