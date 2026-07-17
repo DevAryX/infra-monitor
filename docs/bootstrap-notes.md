@@ -132,3 +132,112 @@ Also remember: replacing EC2 deletes anything stored only on the old instance. T
 This makes the project more resilient because a replacement EC2 instance can prepare itself automatically instead of needing manual setup.
 
 Basically, future EC2 replacements should be cleaner and easier and less painful.
+
+
+## Bootstrap Test Result
+
+The bootstrap was tested by replacing the EC2 instance with Terraform:
+
+```bash
+terraform apply -replace=aws_instance.infra_monitor
+```
+
+After the new EC2 instance was created, the same Elastic IP was attached and SSH access worked using:
+
+```bash
+ssh -i ~/ssh/infra-monitor-key.pem ec2-user@EC2_ELASTIC_IP
+```
+
+Cloud-init completed successfully:
+
+```bash
+cloud-init status --wait
+```
+
+Result:
+
+```text
+status: done
+```
+
+The bootstrap log showed:
+
+```text
+Bootstrap completed successfully
+```
+
+The new EC2 instance automatically had:
+
+```text
+Git
+Docker
+Docker Buildx
+Docker Compose
+infra-monitor repository
+logs directory
+deployment script
+correct ec2-user ownership
+```
+
+The deployment script also ran successfully:
+
+```bash
+bash ~/deploy-infra-monitor.sh
+```
+
+This rebuilt the Docker image, started the Docker Compose service, and wrote timestamped deployment output to:
+
+```text
+/home/ec2-user/infra-monitor/logs/deploy.log
+```
+
+## Issue Found and Fixed
+
+The first bootstrap attempt failed because the script tried to install the full `curl` package on Amazon Linux 2023.
+
+Amazon Linux 2023 already had `curl-minimal`, which conflicted with `curl`.
+
+The failing install line was changed from:
+
+```bash
+dnf install -y git docker curl ca-certificates
+```
+
+to:
+
+```bash
+dnf install -y git docker ca-certificates
+```
+
+Then the script checks whether the `curl` command exists before trying to install anything else:
+
+```bash
+if ! command -v curl >/dev/null 2>&1; then
+  dnf install -y curl-minimal
+fi
+```
+
+This fixed the package conflict and allowed the bootstrap to complete successfully.
+
+## Verification Commands
+
+Useful commands for checking a newly bootstrapped EC2 instance:
+
+```bash
+cloud-init status --wait
+sudo tail -n 120 /var/log/infra-monitor-bootstrap.log
+
+ls -la ~/infra-monitor
+ls -la ~/infra-monitor/logs
+ls -la ~/deploy-infra-monitor.sh
+
+git --version
+docker --version
+docker buildx version
+docker compose version
+
+bash ~/deploy-infra-monitor.sh
+tail -n 80 ~/infra-monitor/logs/deploy.log
+```
+
+
