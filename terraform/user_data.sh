@@ -23,7 +23,13 @@ info "Starting infra-monitor EC2 bootstrap"
 
 info "Updating packages and installing base tools"
 dnf update -y
-dnf install -y git docker curl ca-certificates
+dnf install -y git docker ca-certificates
+
+info "Checking curl availability"
+if ! command -v curl >/dev/null 2>&1; then
+  info "curl command not found, installing curl-minimal"
+  dnf install -y curl-minimal
+fi
 
 info "Starting and enabling Docker"
 systemctl enable --now docker
