@@ -47,7 +47,7 @@ jobs:
 
       - name: Confirm Docker build passed
         run: echo "Docker image built successfully"
-
+        
   docker-compose-validation:
     name: Docker Compose Validation
     runs-on: ubuntu-latest
@@ -73,8 +73,30 @@ jobs:
       - name: Validate Docker Compose file
         run: docker compose -f docker/docker-compose.yml config
 
-      - name: Confirm Docker Compose validation passed
-        run: echo "Docker Compose validation passed"
+      - name: Test runtime environment configuration
+        run: |
+          set -euo pipefail
+
+          mkdir -p logs
+
+          docker compose \
+            -f docker/docker-compose.yml \
+            build infra-monitor
+
+          docker compose \
+            -f docker/docker-compose.yml \
+            run --rm infra-monitor
+
+          test -f logs/day9-env-file.log
+
+          grep -Fq \
+            "Thresholds: CPU=70% Memory=70% Disk=70%" \
+            logs/day9-env-file.log
+
+          echo "Runtime environment variables verified successfully"
+
+      - name: Confirm Docker Compose checks passed
+        run: echo "Docker Compose validation and runtime checks passed"
 
   deploy-to-ec2:
     name: Deploy To EC2
