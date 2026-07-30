@@ -62,7 +62,7 @@ Container folder: /app/logs
 
 The container writes logs to `/app/logs`, but they are saved in the host `logs/` folder, so they can survive even after the container stops.
 
-That matters because this is a monitoring project, and losing logs would be not nice at all.
+It matters cuz this is a monitoring project, and losing logs would be not nice at all.
 
 ## Environment Variables
 
@@ -135,6 +135,4 @@ This makes `infra-monitor` easier to run on:
 * AWS EC2
 * Future cloud servers
 
-The project is now a containerised system monitoring service.
-
-Small Bash script has officially entered its Docker era.
+Small Bash script has officially entered its Docker arc, and mastered the basics of it.
