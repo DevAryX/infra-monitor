@@ -33,7 +33,11 @@ CPU_STATUS="UNKNOWN"
 MEMORY_STATUS="UNKNOWN"
 DISK_STATUS="UNKNOWN"
 OVERALL_STATUS="OK"
-S3_UPLOAD_RESULT="NOT RUN"
+if [ -n "$S3_BUCKET" ]; then
+    S3_DESTINATION="s3://$S3_BUCKET/$S3_KEY"
+else
+    S3_DESTINATION="Disabled"
+fi
 
 timestamp() {
     date "+%Y-%m-%d %H:%M:%S %Z"
@@ -72,7 +76,7 @@ log_summary_block() {
         echo "Disk: $DISK_STATUS"
         echo "Thresholds: CPU=${CPU_THRESHOLD}% Memory=${MEMORY_THRESHOLD}% Disk=${DISK_THRESHOLD}%"
         echo "Status: $OVERALL_STATUS"
-        echo "S3 Upload: $S3_UPLOAD_RESULT"
+        echo "S3 Destination: $S3_DESTINATION"
         echo "=================================================="
         echo ""
     } >> "$LOG_FILE"
@@ -176,21 +180,21 @@ print_section "Network Interfaces"
 ip -brief addr show | grep UP || true
 ip -brief addr show | grep UP >> "$LOG_FILE" || true
 
+# Complete the report before attempting any upload.
+log_summary_block
+
 echo -e "\n${CYAN}${BOLD}Report complete.${RESET}"
 
 if [ -n "$S3_BUCKET" ]; then
-    if aws s3 cp "$LOG_FILE" "s3://$S3_BUCKET/$S3_KEY"; then
-        S3_UPLOAD_RESULT="Success -> s3://$S3_BUCKET/$S3_KEY"
+    if aws s3 cp "$LOG_FILE" "$S3_DESTINATION"; then
+        echo -e "${GREEN}S3 upload succeeded: $S3_DESTINATION${RESET}"
     else
-        S3_UPLOAD_RESULT="Failed"
-        log_error "S3 upload failed for $LOG_FILE to s3://$S3_BUCKET/$S3_KEY"
+        echo -e "${RED}S3 upload failed: $S3_DESTINATION${RESET}" >&2
+        log_error "S3 upload failed for $LOG_FILE to $S3_DESTINATION"
     fi
 else
-    S3_UPLOAD_RESULT="Skipped - INFRA_MONITOR_S3_BUCKET not set"
-    log_error "S3 upload skipped because INFRA_MONITOR_S3_BUCKET is not set"
+    echo "S3 upload skipped: INFRA_MONITOR_S3_BUCKET is not set"
 fi
-
-log_summary_block
 
 rotate_log_file() {
     local file="$1"
