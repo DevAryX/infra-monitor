@@ -969,7 +969,7 @@ I can now prove when deployments happened from the EC2 server itself, instead of
 just updated the readme tbh
 
 
-## Day 14 — Final Proof and LinkedIn Angle
+## Day 14 — Final Proof
 
 Today I collected final proof for the July CI/CD phase.
 
@@ -1007,19 +1007,7 @@ container running on EC2
 deployment log with timestamp
 ```
 
-This proves the July pipeline is working end-to-end.
-
-### LinkedIn Angle
-
-The main angle is simple:
-
-```text 
-I moved infra-monitor from manual deployment to a GitHub Actions CI/CD pipeline.
-```
-
-Before July, deployment was manual.
-
-Now, a push to GitHub can trigger checks, Docker validation, SSH deployment, and a container restart on EC2.
+This proves the July pipeline is working end-to-end, bout time.
 
 ### Result
 
