@@ -126,15 +126,83 @@ EC2 memory dangerously low
 
 ---
 
-## August Monitoring Flow
+## Day 2 — Monitoring Architecture and Repository Scaffold
+
+Okay so today I planned the monitoring architecture before adding more containers.
+
+I created a dedicated folder for monitoring config:
+
+```text
+monitoring/
+├── prometheus/
+└── grafana/
+```
+
+The main Docker Compose file will still stay here:
+
+```text
+docker/docker-compose.yml
+```
+
+This keeps the config organised without splitting the project into random separate parts.
+
+### Planned Architecture
+
+```text
+Terraform
+    ↓
+AWS EC2
+    ↓
+Docker Compose
+    ├── infra-monitor
+    ├── node-exporter
+    ├── prometheus
+    └── grafana
+```
+
+### Data Flow
 
 ```text
 Linux host
     ↓
-Node Exporter
+Node Exporter exposes metrics
     ↓
-Prometheus
+Prometheus scrapes and stores metrics
     ↓
-Grafana
-    ↓
-Dashboard
+Grafana displays dashboards
+```
+
+### Main Decisions
+
+The monitoring services will eventually use an internal Docker network:
+
+```text
+monitoring-net
+```
+
+Services will talk using Compose names:
+
+```text
+Prometheus → node-exporter:9100
+Grafana → prometheus:9090
+```
+
+Prometheus and Grafana will use named volumes:
+
+```text
+prometheus-data
+grafana-data
+```
+
+Prometheus will initially keep around 7 days of metrics. That is enough for learning, graphs, and testing without wasting disk space.
+
+### Security
+
+Grafana will later be accessed through an SSH tunnel from my Ubuntu VM.
+
+Also for rn, no Kubernetes, external databases, distributed storage, or extra tools yet.
+
+
+
+
+
