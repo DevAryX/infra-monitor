@@ -6,7 +6,7 @@ This folder contains the monitoring setup for `infra-monitor`.
 
 The goal is to add proper observability to the project.
 
-The stack will collect Linux host metrics, store them over time, and like display them in Grafana dashboards.
+The stack will collect Linux host metrics, store them over time, and display them in Grafana dashboards.
 
 This will be added to the existing Docker Compose setup, not treated like a separate project.
 
@@ -19,26 +19,60 @@ This will be added to the existing Docker Compose setup, not treated like a sepa
 The original Bash monitoring app.
 
 It currently:
-- Generates system reports
-- Writes logs
-- Uploads to S3 when configured
-- Handles basic errors
 
-Later, it can also expose custom metrics.
+* Generates system reports
+* Writes logs
+* Uploads to S3 when configured
+* Handles basic errors
+
+Later, it will also expose custom metrics.
 
 ### Node Exporter
 
-Node Exporter will collect Linux host metrics.
+Node Exporter collects Linux host metrics.
 
 Examples:
 
-- CPU usage
-- Memory usage
-- Disk usage
-- Network traffic
-- System uptime
+* CPU usage
+* Memory usage
+* Disk usage
+* Network traffic
+* System uptime
 
-Basically, it lets Prometheus see what the EC2 server is doing.
+Basically, it lets Prometheus see what the server is doing.
+
+### Current Node Exporter Implementation
+
+Node Exporter is now running locally through Docker Compose.
+
+It uses:
+
+```yaml
+network_mode: host
+pid: host
+```
+
+The Ubuntu host filesystem is mounted read-only at:
+
+```text
+/host
+```
+
+Node Exporter is configured with:
+
+```text
+--path.rootfs=/host
+```
+
+This lets the containerised exporter read host-level Linux metrics instead of only watching its own container environment.
+
+The local metrics endpoint is:
+
+```text
+http://localhost:9100/metrics
+```
+
+Prometheus will be connected to this endpoint during Day 4.
 
 ### Prometheus
 
@@ -46,11 +80,11 @@ Prometheus will scrape metrics from Node Exporter and store them as time-series 
 
 It will handle:
 
-- Metric collection
-- Local metric storage
-- PromQL queries
-- Target health checks
-- Data source for Grafana
+* Metric collection
+* Local metric storage
+* PromQL queries
+* Target health checks
+* Data source for Grafana
 
 ### Grafana
 
@@ -144,12 +178,16 @@ monitoring-net
 
 Services will talk using Docker Compose names instead of hard-coded IP addresses.
 
-Examples:
+Current planned connections:
 
 ```text
-Prometheus → node-exporter:9100
+Prometheus → host.docker.internal:9100
 Grafana → prometheus:9090
 ```
+
+Node Exporter is the exception because it uses host networking to collect proper host metrics.
+
+Prometheus will later use Docker’s host-gateway mapping to reach Node Exporter from the internal monitoring network.
 
 No random container IP nonsense, the service names are cleaner.
 
@@ -172,7 +210,7 @@ Grafana data should survive so dashboards and settings do not disappear every ti
 
 Prometheus retention will probably start at around 7 days.
 
-This is for learning, testing graphs, and keeping disk usage low.
+This is enough for learning, testing graphs, and keeping disk usage low.
 
 ---
 
@@ -183,7 +221,7 @@ Monitoring tools should not be exposed to the public internet for no reason.
 Planned access:
 
 ```text
-Node Exporter → internal only
+Node Exporter → host/local access only
 Prometheus    → internal only / local troubleshooting
 Grafana       → accessed through SSH tunnel
 ```
@@ -215,7 +253,7 @@ random extra monitoring tools
 
 The goal is simple: understand Node Exporter, Prometheus, and Grafana properly first.
 
-No need to over do it
+No need to overdo it.
 
 ---
 
