@@ -202,7 +202,80 @@ Grafana will later be accessed through an SSH tunnel from my Ubuntu VM.
 
 Also for rn, no Kubernetes, external databases, distributed storage, or extra tools yet.
 
+---
 
+## Day 3 — Run Node Exporter Locally
 
+Today I added Node Exporter to the Docker Compose setup and ran it locally on my Ubuntu VM.
 
+Node Exporter exposes Linux system metrics through:
+
+```text
+http://localhost:9100/metrics
+```
+
+These metrics are what Prometheus will scrape later.
+
+### Container Setup
+
+Node Exporter uses:
+
+```text
+host network
+host PID namespace
+read-only host filesystem mount
+--path.rootfs=/host
+restart unless-stopped
+```
+
+This lets it observe the actual Ubuntu VM instead of only seeing inside its own container.
+
+### Architecture Update
+
+The original idea was:
+
+```text
+Prometheus → node-exporter:9100
+```
+
+But because Node Exporter uses host networking, the better flow is:
+
+```text
+Ubuntu VM / EC2 host
+    ↓
+Node Exporter
+    ↓
+Host port 9100
+    ↓
+Prometheus
+```
+
+Prometheus and Grafana can still use the internal Docker network later.
+
+### Metrics Checked
+
+I inspected metrics like:
+
+```text
+node_cpu_seconds_total
+node_memory_MemAvailable_bytes
+node_filesystem_avail_bytes
+node_network_receive_bytes_total
+node_boot_time_seconds
+node_exporter_build_info
+```
+
+I also compared Node Exporter memory values with `/proc/meminfo`, and they matched.
+
+So Node Exporter is reporting host-level metrics properly.
+
+### What I Learned
+
+Node Exporter does not give nice polished dashboard percentages by itself.
+
+It exposes raw Linux metrics.
+
+Prometheus collects them, PromQL turns them into useful queries, and Grafana makes them visual.
+
+Basically, Node Exporter is the sensor, Prometheus is the collector, Grafana is the screen.
 
