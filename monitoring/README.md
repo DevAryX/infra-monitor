@@ -257,6 +257,68 @@ No need to overdo it.
 
 ---
 
+### Current Prometheus Implementation
+
+Prometheus now runs locally through Docker Compose using:
+
+```text
+prom/prometheus:v3.13.2
+```
+
+The config file is stored at:
+
+```text
+monitoring/prometheus/prometheus.yml
+```
+
+Prometheus currently scrapes:
+
+```text
+localhost:9090
+host.docker.internal:9100
+```
+
+The first target lets Prometheus monitor itself.
+
+The second target connects to Node Exporter, which is running with host networking.
+
+Prometheus uses Docker’s host gateway mapping:
+
+```yaml
+extra_hosts:
+  - "host.docker.internal=host-gateway"
+```
+
+This lets the Prometheus container reach Node Exporter through the Docker host.
+
+Prometheus stores its data in:
+
+```text
+/prometheus
+```
+
+using the named Docker volume:
+
+```text
+prometheus-data
+```
+
+Prometheus retention is configured for seven days using:
+
+```text
+--storage.tsdb.retention.time=7d
+```
+
+Local Prometheus access is available at:
+
+```text
+http://localhost:9090
+```
+
+The port is bound to the Ubuntu VM loopback interface, so it is not exposed on all network interfaces.
+
+---
+
 ## Environment Flow
 
 ```text
