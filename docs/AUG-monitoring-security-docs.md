@@ -279,3 +279,144 @@ Prometheus collects them, PromQL turns them into useful queries, and Grafana mak
 
 Basically, Node Exporter is the sensor, Prometheus is the collector, Grafana is the screen.
 
+
+--- 
+
+## Day 4 — Add Prometheus
+
+Today I added Prometheus to the local Docker Compose monitoring stack.
+
+Prometheus collects metrics by scraping HTTP endpoints.
+
+Node Exporter exposes Linux metrics at:
+
+```text
+http://localhost:9100/metrics
+```
+
+Prometheus now scrapes those metrics every 15 seconds and stores them as time-series data.
+
+### Prometheus Config
+
+The config file is stored at:
+
+```text
+monitoring/prometheus/prometheus.yml
+```
+
+Current scrape jobs:
+
+```text
+prometheus
+node-exporter
+```
+
+The `prometheus` job lets Prometheus monitor itself.
+
+The `node-exporter` job collects Linux host metrics.
+
+### Node Exporter Target
+
+Node Exporter uses host networking, so Prometheus reaches it through:
+
+```text
+host.docker.internal:9100
+```
+
+This works through Docker’s host gateway mapping.
+
+Prometheus itself joins the internal Docker network:
+
+```text
+monitoring-net
+```
+
+Grafana will later join the same network and connect to Prometheus using:
+
+```text
+prometheus:9090
+```
+
+### Storage
+
+Prometheus stores metrics in:
+
+```text
+/prometheus
+```
+
+This is backed by the Docker volume:
+
+```text
+prometheus-data
+```
+
+Retention is set to 7 days, 
+That is enough for learning and graphs without wasting disk space.
+
+### Local Access
+
+Prometheus is available locally at:
+
+```text
+http://localhost:9090
+```
+
+The port is bound to:
+
+```text
+127.0.0.1:9090
+```
+
+So it is only exposed locally on the Ubuntu VM, not randomly opened everywhere.
+
+### Validation
+
+I checked:
+
+```text
+Docker Compose config
+Prometheus config with promtool
+Prometheus health endpoint
+Prometheus readiness endpoint
+Docker host gateway mapping
+Prometheus scrape targets
+```
+
+Both targets were healthy:
+
+```text
+prometheus      UP
+node-exporter   UP
+```
+
+### First PromQL Queries
+
+I tested:
+
+```text
+up
+up{job="node-exporter"}
+```
+
+A value of `1` confirmed Prometheus was successfully scraping Node Exporter.
+
+I also checked metrics like:
+
+```text
+node_memory_MemAvailable_bytes
+node_memory_MemTotal_bytes
+node_boot_time_seconds
+node_cpu_seconds_total
+```
+
+### So What I Learned
+
+Node Exporter exposes the Linux metrics.
+
+Prometheus collects them again and again with timestamps.
+
+That basically creates the history Grafana will later use for dashboards.
+
+Basically, Node Exporter gives the data, Prometheus stores the data, and Grafana will make it look clean.
+
