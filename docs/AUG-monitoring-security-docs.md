@@ -420,3 +420,110 @@ That basically creates the history Grafana will later use for dashboards.
 
 Basically, Node Exporter gives the data, Prometheus stores the data, and Grafana will make it look clean.
 
+---
+
+## Day 5 — PromQL Basics
+
+So today I learned the basics of PromQL.
+
+PromQL is used to turn raw Prometheus metrics into useful monitoring queries.
+
+### Basic Queries
+
+A metric can be queried directly:
+
+```text
+node_memory_MemAvailable_bytes
+```
+
+Labels can filter the result:
+
+```text
+up{job="node-exporter"}
+```
+
+This helps focus on one job, instance, CPU mode, filesystem, or network interface.
+
+### Range Queries
+
+A normal query shows the latest value.
+
+A range query looks back over time:
+
+```text
+node_cpu_seconds_total[5m]
+```
+
+This means the last 5 minutes of data.
+
+### `rate()`
+
+Some metrics are counters, not percentages.
+
+Example:
+
+```text
+node_cpu_seconds_total
+```
+
+This keeps increasing over time.
+
+To make it useful, I used:
+
+```text
+rate(node_cpu_seconds_total[5m])
+```
+
+This shows how fast the counter changed over the last 5 minutes.
+
+### Aggregation
+
+Node Exporter exposes lots of separate metrics, like one per CPU core or network interface.
+
+PromQL can combine them using:
+
+```text
+avg
+sum
+```
+
+This makes the data easier to use in dashboards.
+
+### Queries Created
+
+I created PromQL queries for:
+
+```text
+Node Exporter health
+CPU usage
+Memory usage
+Root disk usage
+Network receive rate
+Network transmit rate
+```
+
+The reusable queries are documented in:
+
+```text
+monitoring/prometheus/promql-basics.md
+```
+
+### Verification
+
+I compared some Prometheus values with Linux commands:
+
+```bash
+free -h
+df -h /
+ip -brief link
+```
+
+I also created temporary CPU load and watched the CPU query react.
+
+### What I Learned
+
+Raw metrics are not always dashboard-ready.
+Node Exporter exposes the data, then Prometheus stores it.
+Then PromQL turns it into useful information.
+
+These queries will be the base for the Grafana dashboard.
