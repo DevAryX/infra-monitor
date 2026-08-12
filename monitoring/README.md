@@ -319,6 +319,68 @@ The port is bound to the Ubuntu VM loopback interface, so it is not exposed on a
 
 ---
 
+### Current Grafana Implementation
+
+Grafana now runs locally through Docker Compose using:
+
+```text
+grafana/grafana:13.1.3
+```
+
+Grafana listens on port:
+
+```text
+3000
+```
+
+The local binding is:
+
+```text
+127.0.0.1:3000
+```
+
+So I can access it from the Ubuntu VM at:
+
+```text
+http://localhost:3000
+```
+
+without exposing it on every network interface.
+
+Grafana and Prometheus both use the Docker network:
+
+```text
+monitoring-net
+```
+
+Grafana connects to Prometheus with:
+
+```text
+http://prometheus:9090
+```
+
+This works because Docker Compose service names can be used between containers.
+
+Important note: `localhost` inside the Grafana container would mean Grafana itself, not Prometheus.
+
+Grafana stores its data in:
+
+```text
+/var/lib/grafana
+```
+
+using the named volume:
+
+```text
+grafana-data
+```
+
+The Prometheus data source was configured manually for now.
+
+Later, Grafana provisioning will move the data source and dashboard setup into files stored in Git.
+
+
+---
 ## Environment Flow
 
 ```text
