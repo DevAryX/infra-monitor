@@ -527,3 +527,103 @@ Node Exporter exposes the data, then Prometheus stores it.
 Then PromQL turns it into useful information.
 
 These queries will be the base for the Grafana dashboard.
+
+---
+
+## Day 6 — Add Grafana
+
+Today I added Grafana as the visual part of the monitoring stack.
+
+The monitoring flow is now:
+
+```text
+Ubuntu Linux host
+    ↓
+Node Exporter
+    ↓
+Prometheus
+    ↓
+Grafana
+```
+
+madd stufff
+
+Node Exporter exposes the Linux metrics.
+
+Prometheus scrapes and stores them.
+
+Grafana queries Prometheus and turns the metrics into dashboards.
+
+### Docker Setup
+
+Grafana runs through the existing Docker Compose setup using:
+
+```text
+grafana/grafana:13.1.3
+```
+
+It joins the same Docker network as Prometheus:
+
+```text
+monitoring-net
+```
+
+Grafana connects to Prometheus using:
+
+```text
+http://prometheus:9090
+```
+
+This is important because `localhost` inside the Grafana container would mean Grafana itself, not Prometheus.
+
+### Persistence
+
+Grafana stores its data in:
+
+```text
+/var/lib/grafana
+```
+
+using the Docker volume:
+
+```text
+grafana-data
+```
+
+This means settings and dashboards should survive normal container restarts.
+
+### Local Access
+
+Grafana is bound to:
+
+```text
+127.0.0.1:3000
+```
+
+and can be accessed on the Ubuntu VM at:
+
+```text
+http://localhost:3000
+```
+
+The default admin password was changed during setup and was NOT saved in the repo
+
+### Verification
+
+I connected Grafana to the Prometheus data source.
+
+Then I tested PromQL queries in Grafana Explore, including:
+
+```text
+up{job="node-exporter"}
+```
+
+and:
+
+```text
+node_memory_MemAvailable_bytes{job="node-exporter"}
+```
+
+This confirmed Grafana can read the metrics Prometheus collected. it was amazing
+
+---
