@@ -379,6 +379,40 @@ The Prometheus data source was configured manually for now.
 
 Later, Grafana provisioning will move the data source and dashboard setup into files stored in Git.
 
+---
+
+### Main Dashboard
+
+The main Grafana dashboard is:
+
+```text
+Infra Monitor — EC2 Overview
+```
+
+It currently shows:
+
+```text
+CPU utilisation
+Memory utilisation
+Root filesystem usage
+Prometheus target status
+Network receive traffic
+Network transmit traffic
+Available memory
+System uptime
+```
+
+The dashboard uses the PromQL queries created earlier in the monitoring phase.
+
+Dashboard notes are stored at:
+
+```text
+monitoring/grafana/dashboard-notes.md
+```
+
+Right now, the dashboard is saved through the `grafana-data` Docker volume.
+
+Later, I will export it as JSON and provision it from Git, so the dashboard can be recreated automatically instead of only living inside Grafana.
 
 ---
 ## Environment Flow
