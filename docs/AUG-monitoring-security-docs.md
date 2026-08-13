@@ -627,3 +627,103 @@ node_memory_MemAvailable_bytes{job="node-exporter"}
 This confirmed Grafana can read the metrics Prometheus collected. it was amazing
 
 ---
+
+## Day 7 — Build the Main Grafana Dashboard
+
+Today I built the main Grafana dashboard.
+
+The dashboard is named:
+
+```text
+Infra Monitor — EC2 Overview
+```
+
+Right now it is showing metrics from my local Ubuntu VM before I move the monitoring stack onto EC2.
+
+### Panels Added
+
+The dashboard currently has eight panels:
+
+```text
+CPU utilisation
+Memory utilisation
+Root disk usage
+Prometheus target status
+Network received
+Network transmitted
+Available memory
+System uptime
+```
+
+### Visualisations
+
+I used gauges for CPU, memory, and disk because they are percentage-based.
+
+I used stat panels for target status, available memory, and uptime.
+
+I used time-series panels for network traffic because it makes more sense to see how traffic changes over time.
+
+### Target Status
+
+The dashboard uses the Prometheus `up` metric to show target health.
+
+Grafana maps the values like this:
+
+```text
+1 → UP
+0 → DOWN
+```
+
+This is much cleaner than staring at random `1` and `0` values.
+
+### Network Panels
+
+The network queries filter out loopback and Docker virtual interfaces.
+
+This keeps the dashboard focused on real host traffic instead of container noise.
+
+The queries also avoid depending on one exact interface name, which should make it easier to move from the Ubuntu VM to EC2 later.
+
+### Verification
+
+I compared dashboard values with Linux commands:
+
+```bash
+free -h
+df -h /
+uptime -p
+top
+```
+
+This helped confirm the dashboard was showing real host data properly.
+
+### Current State
+
+The dashboard is currently saved inside the `grafana-data` Docker volume.
+
+It has not been exported as JSON yet.
+
+
+### Current Flow
+
+```text
+Ubuntu VM
+    ↓
+Node Exporter
+    ↓
+Prometheus
+    ↓
+PromQL
+    ↓
+Grafana
+    ↓
+Infra Monitor — EC2 Overview
+```
+
+### What I Learned
+
+A Grafana dashboard is basically queries plus visualisations.
+
+PromQL does the calculations and setting it up is actually quite simple.
+
+---
