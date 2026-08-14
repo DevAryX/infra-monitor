@@ -193,24 +193,45 @@ No random container IP nonsense, the service names are cleaner.
 
 ---
 
-## Persistence Plan
+### Persistence Testing
 
-Docker named volumes will be used for data that should survive container restarts.
+The monitoring stack uses named Docker volumes for data that needs to survive container recreation.
 
-Planned volumes:
+Prometheus uses:
 
-```text
-prometheus-data
-grafana-data
+```
+prometheus-data → /prometheus
 ```
 
-Prometheus data should survive so recent metrics are not lost straight away.
+Grafana uses:
 
-Grafana data should survive so dashboards and settings do not disappear every time the container restarts.
+```
+grafana-data → /var/lib/grafana
+```
 
-Prometheus retention will probably start at around 7 days.
+I tested this by stopping and recreating the Compose containers.
 
-This is enough for learning, testing graphs, and keeping disk usage low.
+After recreation:
+
+```
+Prometheus kept old metrics
+Grafana kept the dashboard
+Grafana kept the Prometheus data source
+Grafana kept its settings
+new containers reattached the same volumes
+```
+
+The full test is documented in:
+
+```
+monitoring/persistence-test.md
+```
+
+So, Docker volumes protect the monitoring state from normal container recreation.
+
+But this is still not full reproducibility from Git yet.
+
+Grafana provisioning will be added next so the dashboard and data source can be rebuilt from version-controlled files.
 
 ---
 
