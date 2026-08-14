@@ -727,3 +727,78 @@ A Grafana dashboard is basically queries plus visualisations.
 PromQL does the calculations and setting it up is actually quite simple.
 
 ---
+
+## Day 8 — Persistence and Restart Testing
+
+Today I tested if the monitoring stack could survive Docker container recreation without losing important data.
+
+### Persistent Volumes
+
+Prometheus uses:
+
+```
+prometheus-data → /prometheus
+```
+
+Grafana uses:
+
+```
+grafana-data → /var/lib/grafana
+```
+
+These volumes store the important data outside the containers.
+
+### Recreation Test
+
+Before stopping the stack, I recorded the Prometheus and Grafana container IDs.
+
+Then I ran:
+
+```
+docker compose -f docker/docker-compose.yml down
+```
+
+This removed the containers, but not the named volumes.
+
+I then recreated the stack:
+
+```
+docker compose -f docker/docker-compose.yml up -d
+```
+
+The new Prometheus and Grafana containers had different container IDs, so they were properly recreated.
+
+### Results
+
+Prometheus kept old metric data from before the container was removed.
+
+Grafana also kept:
+
+```
+admin settings
+Prometheus data source
+Infra Monitor — EC2 Overview dashboard
+all dashboard panels
+```
+
+So yeah, the named volumes worked properly.
+
+### Persistence vs Reproducibility
+
+Docker volumes give persistence on the current machine.
+
+But they do not make everything fully reproducible from Git yet.
+
+```
+Persistent
+→ survives container replacement
+
+Reproducible
+→ can be rebuilt from Git-tracked config
+```
+
+### What I Learned
+
+Important data should live outside the container filesystem.
+
+This test proved that Prometheus and Grafana can survive normal container recreation, but the next step is still Grafana provisioning so the setup can be rebuilt properly from Git.
