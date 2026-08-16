@@ -91,10 +91,42 @@ time() - node_boot_time_seconds{job="node-exporter"}
 
 ## Current State
 
-The dashboard is currently stored inside Grafana’s persistent Docker volume.
+The Grafana dashboard is now stored in the repo as:
 
-It has not been exported into the repo yet.
+monitoring/grafana/dashboards/infra-overview.json
 
-Later, I will add Grafana provisioning and dashboard-as-code, so the dashboard can be recreated from files instead of only existing inside Grafana
+The dashboard uses the stable UID:
+
+infra-monitor-ec2-overview
+
+The Prometheus data source also uses a stable UID:
+
+prometheus
+
+Grafana loads the dashboard through:
+
+monitoring/grafana/provisioning/dashboards/dashboards.yml
+
+The dashboard folder is mounted read-only into the Grafana container.
+
+Grafana then scans the folder and loads the dashboard automatically.
+
+UI changes are disabled for the provisioned dashboard, so the JSON file in Git stays as the source of truth.
+
+Reproducibility Test
+
+I deleted the original Grafana container and the grafana-data volume on purpose.
+
+Then I created a fresh Grafana instance.
+
+Without manually setting anything up again, Grafana automatically loaded:
+
+Prometheus data source
+Infra Monitor — EC2 Overview dashboard
+all eight dashboard panels
+
+So yeah, the important Grafana setup is now reproducible from Git.
+
+This is a big improvement because the dashboard no longer depends only on an existing Docker volume.
 
 For now, the main thing is that the dashboard works and shows real Linux metrics from Node Exporter. AND that it LOOKS SICK
