@@ -799,6 +799,97 @@ Reproducible
 
 ### What I Learned
 
-Important data should live outside the container filesystem.
-
 This test proved that Prometheus and Grafana can survive normal container recreation, but the next step is still Grafana provisioning so the setup can be rebuilt properly from Git.
+
+---
+
+## Day 9 — Provision Grafana as Code
+
+Today I moved the main Grafana setup into Git-tracked config.
+
+The goal was to make Grafana reproducible, not just persistent.
+
+Before this, the dashboard and data source survived because of the `grafana-data` volume.
+
+But if that volume was deleted, the setup would be gone.
+
+### Files Added
+
+The dashboard was exported to:
+
+```text
+monitoring/grafana/dashboards/infra-overview.json
+```
+
+The Prometheus data source is defined in:
+
+```text
+monitoring/grafana/provisioning/datasources/prometheus.yml
+```
+
+The dashboard provider is defined in:
+
+```text
+monitoring/grafana/provisioning/dashboards/dashboards.yml
+```
+
+Stable UIDs are used:
+
+```text
+Prometheus data source → prometheus
+Main dashboard          → infra-monitor-ec2-overview
+```
+
+This matters because the dashboard needs to know which data source to use, even on a fresh Grafana install.
+
+### Source of Truth
+
+The new flow is:
+
+```text
+Git dashboard JSON
+↓
+Docker read-only mount
+↓
+Grafana provisioning
+↓
+Grafana dashboard
+```
+
+So instead of relying only on manual UI changes, Grafana now loads the important config from the repo.
+
+UI updates are disabled for the provisioned dashboard, so the Git version stays as the source of truth.
+
+### Fresh-State Test
+
+To test it properly, I removed the Grafana container and deleted the `grafana-data` volume.
+
+Then I started Grafana again from scratch.
+
+Grafana automatically recreated:
+
+```text
+Prometheus data source
+Infra Monitor dashboard folder
+Infra Monitor — EC2 Overview dashboard
+all eight dashboard panels
+```
+
+The dashboard worked again without manually adding the data source or rebuilding the panels.
+
+### What I Learned
+
+Persistence and reproducibility are not the same thing.
+
+```text
+Docker volumes
+→ keep runtime state during normal container recreation
+
+Git provisioning
+→ rebuild important config after total Grafana state loss
+```
+
+So yeah, the `grafana-data` volume is still useful, but the main dashboard setup no longer depends on it.
+
+This is a proper upgrade because Grafana can now rebuild itself from the repo.
+
