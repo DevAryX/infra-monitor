@@ -88,39 +88,43 @@ It will handle:
 
 ### Grafana
 
-Grafana will show the metrics in dashboards.
+### Grafana Provisioning
 
-Planned dashboard name:
+Grafana is now partly managed as code.
 
-```text
-Infra Monitor - EC2 Overview
+The Prometheus data source is defined in:
+
+```text id="8mlbhy"
+monitoring/grafana/provisioning/datasources/prometheus.yml
 ```
 
-This is where the project becomes more visual instead of just logs in a terminal.
+The dashboard provider is defined in:
 
----
-
-## Monitoring Flow
-
-```text
-Linux host
-    ↓
-Node Exporter
-    ↓
-Prometheus
-    ↓
-Grafana
-    ↓
-Infra Monitor dashboard
+```text id="oh3pl7"
+monitoring/grafana/provisioning/dashboards/dashboards.yml
 ```
 
-Simple idea:
+The main dashboard is stored as:
 
-```text
-Node Exporter exposes metrics
-Prometheus collects and stores them
-Grafana displays them
+```text id="pavvna"
+monitoring/grafana/dashboards/infra-overview.json
 ```
+
+Stable UIDs are used:
+
+```text id="bkht7n"
+Prometheus data source → prometheus
+Main dashboard          → infra-monitor-ec2-overview
+```
+
+The provisioning files and dashboard folder are mounted read-only into the Grafana container.
+
+This means Grafana no longer depends on me manually creating the data source and dashboard in the UI.
+
+I also tested a fresh `grafana-data` volume, and Grafana automatically brought back the Prometheus data source and the full dashboard from the Git-tracked files.
+
+So yeah, the dashboard setup is now actually reproducible instead of only surviving through a Docker volume.
+
 
 ---
 
