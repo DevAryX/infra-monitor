@@ -893,3 +893,4 @@ So yeah, the `grafana-data` volume is still useful, but the main dashboard setup
 
 This is a proper upgrade because Grafana can now rebuild itself from the repo.
 
+(Commit test)
