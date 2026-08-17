@@ -894,3 +894,109 @@ So yeah, the `grafana-data` volume is still useful, but the main dashboard setup
 This is a proper upgrade because Grafana can now rebuild itself from the repo.
 
 (Commit test)
+
+---
+
+## Day 10 — Deploy the Monitoring Stack to EC2
+
+Today I verified the full monitoring stack on the Terraform-managed AWS EC2 instance.
+
+The August monitoring services now use the same GitHub Actions deployment pipeline I built in July.
+
+So the flow is basically:
+
+```
+Push to main
+↓
+GitHub Actions runs checks
+↓
+GitHub Actions SSHs into EC2
+↓
+deploy-infra-monitor.sh runs
+↓
+Docker Compose starts the stack
+```
+
+### EC2 Stack
+
+The EC2 instance now runs:
+
+```
+infra-monitor
+node-exporter
+prometheus
+grafana
+```
+
+Node Exporter, Prometheus, and Grafana run as long-running services.
+
+The original `infra-monitor` container still runs as a one-shot job. It creates the system report and exits successfully.
+
+### Prometheus Check
+
+Prometheus successfully scraped:
+
+```text id="kivnm0"
+prometheus
+node-exporter
+```
+
+Both targets showed as:
+
+```text id="k2fzw2"
+UP
+```
+
+I also queried:
+
+```text id="pv949t"
+node_uname_info{job="node-exporter"}
+```
+
+and compared it with the EC2 hostname.
+
+This confirmed the metrics were coming from the EC2 host, not my local Ubuntu VM.
+
+### Grafana Check
+
+Grafana loaded the provisioned dashboard:
+
+```text id="z51ew6"
+Infra Monitor — EC2 Overview
+```
+
+The dashboard showed live EC2 metrics for:
+
+```text id="fgts10"
+CPU
+memory
+disk
+network
+uptime
+Prometheus target health
+```
+
+### Secure Access
+
+Grafana and Prometheus stayed bound to EC2 localhost.
+
+I accessed them using SSH port forwarding instead of opening ports `3000` or `9090` to the public internet.
+
+### Resource Check
+
+I checked the EC2 usage with:
+
+```
+free -h
+df -h /
+docker stats --no-stream
+```
+
+This helped me see whether the current EC2 size can handle the full monitoring stack.
+
+### What I Learned
+
+The monitoring stack was able to reuse the CI/CD deployment path from July.
+
+That is a big thing because the project is now growing without needing a totally new deployment method every time.
+
