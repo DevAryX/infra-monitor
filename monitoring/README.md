@@ -239,6 +239,34 @@ Grafana provisioning will be added next so the dashboard and data source can be 
 
 ---
 
+### EC2 Deployment
+
+The complete monitoring stack has now been deployed to the Terraform-managed Amazon Linux EC2 server.
+
+The cloud monitoring flow is:
+
+```text
+Amazon Linux EC2
+    ↓
+Node Exporter
+    ↓
+Prometheus
+    ↓
+Grafana
+```
+
+The stack is deployed using the existing GitHub Actions CI/CD pipeline.
+
+Prometheus and Grafana remain bound to EC2 localhost and can be accessed through SSH port forwarding.
+
+Deployment and results are documented in:
+
+```
+monitoring/ec2-deployment-test.md
+```
+
+---
+
 ## Security Plan
 
 Monitoring tools should not be exposed to the public internet for no reason.
