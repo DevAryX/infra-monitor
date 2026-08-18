@@ -936,20 +936,20 @@ The original `infra-monitor` container still runs as a one-shot job. It creates 
 
 Prometheus successfully scraped:
 
-```text id="kivnm0"
+```
 prometheus
 node-exporter
 ```
 
 Both targets showed as:
 
-```text id="k2fzw2"
+```
 UP
 ```
 
 I also queried:
 
-```text id="pv949t"
+```
 node_uname_info{job="node-exporter"}
 ```
 
@@ -961,13 +961,13 @@ This confirmed the metrics were coming from the EC2 host, not my local Ubuntu VM
 
 Grafana loaded the provisioned dashboard:
 
-```text id="z51ew6"
+```
 Infra Monitor — EC2 Overview
 ```
 
 The dashboard showed live EC2 metrics for:
 
-```text id="fgts10"
+```
 CPU
 memory
 disk
@@ -999,4 +999,90 @@ This helped me see whether the current EC2 size can handle the full monitoring s
 The monitoring stack was able to reuse the CI/CD deployment path from July.
 
 That is a big thing because the project is now growing without needing a totally new deployment method every time.
+
+---
+
+## Day 11 — Secure Monitoring Access
+
+Today I checked that the EC2 monitoring stack is not exposed publicly.
+
+### Security Group
+
+The Terraform-managed Security Group only allows permanent SSH access:
+
+```
+22 → trusted /32 CIDR
+```
+
+There are no permanent public rules for:
+
+```
+3000 → Grafana
+9090 → Prometheus
+9100 → Node Exporter
+```
+
+GitHub Actions can temporarily allow its runner IP for SSH deployment, but that rule is removed afterwards.
+
+### Service Bindings
+
+Grafana is bound to:
+
+```
+127.0.0.1:3000
+```
+
+Prometheus is bound to:
+
+```
+127.0.0.1:9090
+```
+
+Node Exporter uses host networking on port `9100`, so the Security Group is what blocks public access to it.
+
+### Public Test
+
+From my Ubuntu VM, I tested the EC2 Elastic IP.
+
+Result:
+
+```
+SSH           22   → reachable
+Grafana       3000 → blocked
+Prometheus    9090 → blocked
+Node Exporter 9100 → blocked
+```
+
+So, the monitoring services are not open to the internet.
+
+### SSH Tunnel
+
+Grafana and Prometheus are accessed through SSH tunnels instead.
+
+Because my Ubuntu VM already uses ports `3000` and `9090` locally, I used:
+
+```
+localhost:13000 → EC2 Grafana
+localhost:19090 → EC2 Prometheus
+```
+
+### What I Learned
+
+A service can be running without needing to be public.
+
+Current access model:
+
+```
+Internet
+↓
+AWS Security Group
+↓
+SSH 22
+↓
+SSH tunnel
+↓
+Grafana / Prometheus on EC2 localhost
+```
+
+This keeps the monitoring stack private while still letting me access it securely when needed. ayeaye
 
