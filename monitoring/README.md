@@ -291,6 +291,55 @@ The idea is to keep the monitoring stack useful but not wide open.
 
 ---
 
+### Secure Monitoring Access
+
+The monitoring tools are not exposed through permanent public Security Group rules.
+
+Public EC2 access is limited to SSH:
+
+```text
+port 22 → trusted /32 CIDR only
+```
+
+Grafana is bound to:
+
+```text
+127.0.0.1:3000
+```
+
+Prometheus is bound to:
+
+```text
+127.0.0.1:9090
+```
+
+Node Exporter uses host networking on:
+
+```text
+9100
+```
+
+but the Terraform Security Group does not allow public access to that port.
+
+Grafana and Prometheus are accessed from my Ubuntu VM using SSH tunnels.
+
+Because my Ubuntu VM also has local monitoring running, EC2 uses different local tunnel ports:
+
+```text
+localhost:13000 → EC2 Grafana
+localhost:19090 → EC2 Prometheus
+```
+
+The full test is documented in:
+
+```text
+monitoring/secure-access.md
+```
+
+So yeah, the services are reachable when I need them, but not just sitting open on the internet.
+
+---
+
 ## Out of Scope, for now
 
 This phase will not add:
