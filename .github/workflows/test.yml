@@ -60,14 +60,28 @@ jobs:
       - name: Show Docker Compose version
         run: docker compose version
 
-      - name: Create CI environment file
+      - name: Create CI runtime environment
         run: |
-          cat > docker/day9.env <<'EOF'
+          cat > docker/runtime.env <<'EOF'
           INFRA_MONITOR_CPU_THRESHOLD=70
           INFRA_MONITOR_MEMORY_THRESHOLD=70
           INFRA_MONITOR_DISK_THRESHOLD=70
-          INFRA_MONITOR_SYSTEM_LOG=/app/logs/day9-env-file.log
-          INFRA_MONITOR_ERROR_LOG=/app/logs/day9-error.log
+          INFRA_MONITOR_MAX_LOG_SIZE=50000
+          INFRA_MONITOR_SYSTEM_LOG=/app/logs/ci-system-report.log
+          INFRA_MONITOR_ERROR_LOG=/app/logs/ci-error.log
+          INFRA_MONITOR_S3_BUCKET=
+          INFRA_MONITOR_S3_KEY=system_report.log
+          EOF
+
+          chmod 600 docker/runtime.env
+
+      - name: Create CI Grafana environment
+        run: |
+          mkdir -p "$HOME/.config/infra-monitor"
+
+          cat > "$HOME/.config/infra-monitor/grafana.env" <<'EOF'
+          GF_SECURITY_ADMIN_USER=admin
+          GF_SECURITY_ADMIN_PASSWORD=ci-only-placeholder-not-a-real-secret
           EOF
 
       - name: Validate Docker Compose file
@@ -87,11 +101,11 @@ jobs:
             -f docker/docker-compose.yml \
             run --rm infra-monitor
 
-          test -f logs/day9-env-file.log
+          test -f logs/ci-system-report.log
 
           grep -Fq \
             "Thresholds: CPU=70% Memory=70% Disk=70%" \
-            logs/day9-env-file.log
+            logs/ci-system-report.log
 
           echo "Runtime environment variables verified successfully"
 

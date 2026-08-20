@@ -5,24 +5,33 @@
 *~
 .DS_Store
 
-
 # Logs
 *.log
 logs/
 
-# Enviroment files
+# Environment files / secrets
 .env
+.env.*
 *.env
 .infra-monitor.env
 
-# Terraform
+# Allow tracked safe templates
+!*.env.example
+!.env.example
+
+# Terraform local state / configuration
 .terraform/
-terraform.tfstate*
 *.tfstate
 *.tfstate.*
 terraform.tfvars
+*.tfvars
+*.tfplan
+crash.log
+crash.*.log
 
-
-# SSH keys
+# SSH / private key material
 *.pem
+*.key
+*.p12
+*.pfx
 ssh/*.pem

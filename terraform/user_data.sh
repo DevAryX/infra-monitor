@@ -6,7 +6,9 @@ PROJECT_DIR="/home/ec2-user/infra-monitor"
 REPO_URL="https://github.com/DevAryX/infra-monitor.git"
 HOME_DIR="/home/ec2-user"
 PLUGIN_DIR="$HOME_DIR/.docker/cli-plugins"
-ENV_FILE="$PROJECT_DIR/docker/day9.env"
+RUNTIME_ENV_FILE="$PROJECT_DIR/docker/runtime.env"
+GRAFANA_ENV_DIR="$HOME_DIR/.config/infra-monitor"
+GRAFANA_ENV_FILE="$GRAFANA_ENV_DIR/grafana.env"
 
 exec > >(tee -a "$BOOTSTRAP_LOG") 2>&1
 
@@ -23,7 +25,7 @@ info "Starting infra-monitor EC2 bootstrap"
 
 info "Updating packages and installing base tools"
 dnf update -y
-dnf install -y git docker ca-certificates
+dnf install -y git docker ca-certificates openssl
 
 info "Checking curl availability"
 if ! command -v curl >/dev/null 2>&1; then
@@ -85,16 +87,39 @@ fi
 info "Creating logs directory"
 mkdir -p "$PROJECT_DIR/logs"
 
-info "Creating default Docker env file if missing"
-if [ ! -f "$ENV_FILE" ]; then
-  cat > "$ENV_FILE" <<'ENVEOF'
-CPU_THRESHOLD=70
-MEMORY_THRESHOLD=70
-DISK_THRESHOLD=70
-INFRA_MONITOR_SYSTEM_LOG=/app/logs/day9-env-file.log
-INFRA_MONITOR_ERROR_LOG=/app/logs/day9-error.log
-ENVEOF
+info "Creating runtime environment file if missing"
+if [ ! -f "$RUNTIME_ENV_FILE" ]; then
+  [ -f "$PROJECT_DIR/docker/runtime.env.example" ] \
+    || fail "Runtime env template not found"
+
+  install \
+    -m 600 \
+    -o ec2-user \
+    -g ec2-user \
+    "$PROJECT_DIR/docker/runtime.env.example" \
+    "$RUNTIME_ENV_FILE"
 fi
+
+info "Preparing Grafana credential directory"
+mkdir -p "$GRAFANA_ENV_DIR"
+chown ec2-user:ec2-user "$GRAFANA_ENV_DIR"
+chmod 700 "$GRAFANA_ENV_DIR"
+
+if [ ! -f "$GRAFANA_ENV_FILE" ]; then
+  info "Generating initial Grafana credentials"
+
+  GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+
+  {
+    echo "GF_SECURITY_ADMIN_USER=admin"
+    printf 'GF_SECURITY_ADMIN_PASSWORD=%s\n' "$GRAFANA_ADMIN_PASSWORD"
+  } > "$GRAFANA_ENV_FILE"
+
+  unset GRAFANA_ADMIN_PASSWORD
+fi
+
+chown ec2-user:ec2-user "$GRAFANA_ENV_FILE"
+chmod 600 "$GRAFANA_ENV_FILE"
 
 info "Preparing deployment script"
 if [ -f "$PROJECT_DIR/scripts/deploy-infra-monitor.sh" ]; then

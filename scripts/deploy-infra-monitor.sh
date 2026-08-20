@@ -3,7 +3,8 @@ set -euo pipefail
 
 PROJECT_DIR="$HOME/infra-monitor"
 COMPOSE_FILE="$PROJECT_DIR/docker/docker-compose.yml"
-ENV_FILE="$PROJECT_DIR/docker/day9.env"
+RUNTIME_ENV_FILE="$PROJECT_DIR/docker/runtime.env"
+GRAFANA_ENV_FILE="$HOME/.config/infra-monitor/grafana.env"
 LOG_DIR="$PROJECT_DIR/logs"
 LOG_FILE="$LOG_DIR/deploy.log"
 
@@ -36,9 +37,25 @@ docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin is not ava
 
 [ -f "$COMPOSE_FILE" ] || fail "Docker Compose file not found: $COMPOSE_FILE"
 
-if grep -q "day9.env" "$COMPOSE_FILE"; then
-  [ -f "$ENV_FILE" ] || fail "Expected env file not found: $ENV_FILE"
-fi
+[ -f "$RUNTIME_ENV_FILE" ] \
+  || fail "Runtime env file not found: $RUNTIME_ENV_FILE"
+
+[ -f "$GRAFANA_ENV_FILE" ] \
+  || fail "Grafana env file not found: $GRAFANA_ENV_FILE"
+
+case "$(stat -c '%a' "$RUNTIME_ENV_FILE")" in
+  600|400) ;;
+  *)
+    fail "Runtime env file must use permission 600 or 400: $RUNTIME_ENV_FILE"
+    ;;
+esac
+
+case "$(stat -c '%a' "$GRAFANA_ENV_FILE")" in
+  600|400) ;;
+  *)
+    fail "Grafana env file must use permission 600 or 400: $GRAFANA_ENV_FILE"
+    ;;
+esac
 
 info "Preflight checks passed"
 
