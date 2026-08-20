@@ -1070,7 +1070,7 @@ localhost:19090 → EC2 Prometheus
 
 A service can be running without needing to be public.
 
-Current access model:
+Rn access model:
 
 ```
 Internet
@@ -1086,3 +1086,76 @@ Grafana / Prometheus on EC2 localhost
 
 This keeps the monitoring stack private while still letting me access it securely when needed. ayeaye
 
+---
+
+## Day 12 — Secrets Audit and Environment Cleanup
+
+Today I audited the repo and runtime config for secrets, env files, Terraform state, and messy variable names.
+
+### Environment Cleanup
+
+The project had a few different names for the same threshold settings.
+
+The script expects the `INFRA_MONITOR_*` format, so I standardised the active config around that.
+
+The old tracked file was replaced with:
+
+```
+docker/runtime.env.example
+```
+
+This only contains safe example values.
+
+The real runtime config now lives in:
+
+```
+docker/runtime.env
+```
+
+and is ignored by Git.
+
+### Grafana Credentials
+
+Grafana admin credentials are now stored outside the repo in:
+
+```
+~/.config/infra-monitor/grafana.env
+```
+
+Docker Compose uses:
+
+```
+GF_SECURITY_ADMIN_USER
+GF_SECURITY_ADMIN_PASSWORD
+```
+
+without putting the real values into Git.
+
+### Repo Protection
+
+I reviewed `.gitignore` for:
+
+```
+env files
+Terraform state
+Terraform tfvars
+Terraform plans
+SSH/private keys
+logs
+```
+
+I also checked the tracked repo for common secret patterns like AWS keys, tokens, and private-key headers.
+
+### What I Learned
+
+Secrets, runtime config, and example config are NOT the same thing.
+
+Example files can go in Git
+
+Real secrets cannot.
+
+Also, `.gitignore` only protects NEW untracked files. It does NOT remove secrets that were already committed before.
+
+The other big lesson is that variable names need to be consistent, because one wrong env var name can quietly make the script fall back to defaults
+
+Small mistake cuz but annoying consequences
