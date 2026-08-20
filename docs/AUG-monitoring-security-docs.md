@@ -1158,4 +1158,29 @@ Also, `.gitignore` only protects NEW untracked files. It does NOT remove secrets
 
 The other big lesson is that variable names need to be consistent, because one wrong env var name can quietly make the script fall back to defaults
 
-Small mistake cuz but annoying consequences
+Small mistake cuz but annoying consequences.
+
+Also today i set myself a target that i will securely redo my bootstrapping aswell: 
+
+## Aug Follow-Up  EC2 Bootstrap Hardening
+
+After completing the main August monitoring and security sequence, I will redo my bootstrapping and make it more secure and harden it.
+
+Planned work:
+
+- Install and configure `firewalld` automatically
+- Keep only required host firewall access
+- Verify monitoring access still works through SSH tunnelling
+- Improve bootstrap idempotency
+- Avoid unnecessary dependency downloads
+- Pin Docker Compose and Buildx versions deliberately
+- Improve deployment-script synchronisation
+- Validate secret-file creation and permissions
+- Add clearer bootstrap health checks
+- Replace the EC2 instance once through Terraform
+- Prove a completely fresh instance self-configures successfully
+- Reboot the instance and confirm the complete stack returns
+
+This will be at the end tho after aug days
+
+---
