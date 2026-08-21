@@ -1184,3 +1184,84 @@ Planned work:
 This will be at the end tho after aug days
 
 ---
+
+## Day 13 — IAM Least Privilege
+
+So today I replaced workload AWS keys with an IAM role attached to the EC2 instance.
+
+The monitoring app only needs to upload the system report to S3.
+
+So the minimum permission is:
+
+```
+s3:PutObject
+```
+
+### IAM Setup
+
+Terraform now manages:
+
+```
+EC2 trust policy
+IAM role
+custom S3 upload policy
+policy attachment
+EC2 instance profile
+```
+
+The policy does **not** allow broad access like:
+
+```
+s3:*
+s3:ListBucket
+s3:GetObject
+s3:DeleteObject
+EC2 admin access
+IAM admin access
+```
+
+It only allows the upload the app actually needs.
+
+### Temporary Credentials
+
+No AWS access key or secret key was added to the app environment.
+
+The AWS CLI inside the container gets temporary credentials from the EC2 IAM role.
+
+AWS handles and rotates those credentials automatically.
+
+Much cleaner than keeping long-term keys on the server.
+
+### Permission Tests
+
+The intended S3 report upload worked.
+
+I also tested actions that should fail:
+
+```
+bucket listing denied
+wrong object upload denied
+unrelated EC2 API denied
+```
+
+So yeah, the role is not just working, it is actually restricted.
+
+### Terraform Note
+
+The Day 12 bootstrap changes are still waiting for the Bootstrap Hardening phase.
+
+So I avoided accidentally replacing EC2 during today’s IAM work.
+
+Safe apply path used:
+
+```
+Record safe apply path here
+```
+
+### What I Learned
+
+Least privilege means starting with what the app actually needs, not giving it everything just because it is easier.
+
+A successful upload proves the app works and the denied tests prove the permissions are properly limited.
+
+proper security improvement which took me half the night, terraform lwk carrying the project
