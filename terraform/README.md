@@ -264,10 +264,57 @@ This means the AWS setup is no longer something I just clicked together once in 
 
 It can now be rebuilt from code, which is the whole point.
 
-Final May statement:
-
 > I used Terraform to provision AWS infrastructure for my Linux monitoring project, making the cloud setup reproducible, documented, and easier to rebuild.
 
-May phase done. Big target hit.
+May phase done.
 
+---
 
+## EC2 IAM Role
+
+Slight update to Terraform here,
+
+The EC2 workload now gets AWS permissions through a Terraform-managed IAM role and instance profile.
+
+Permission flow:
+
+```
+EC2
+
+IAM Instance Profile
+
+infra-monitor-ec2-role
+
+infra-monitor-s3-upload policy
+
+Amazon S3
+```
+
+The custom policy follows least privilege.
+
+Right now, the monitoring app only needs:
+
+```
+s3:PutObject
+```
+
+So the policy only allows upload to the configured system report object, not full random S3 access.
+
+This means the EC2 instance does not need long-lived AWS access keys for the workload.
+
+AWS gives the instance temporary role credentials through the EC2 metadata service and rotates them automatically.
+
+### Tested
+
+I tested that:
+
+```
+intended report upload works
+bucket listing is denied
+uploading to the wrong object key is denied
+unrelated EC2 API access is denied
+```
+
+So the app gets the exact permission it needs and nothing extra.
+
+Much cleaner than leaving AWS keys sitting around.
