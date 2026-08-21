@@ -31,3 +31,14 @@ variable "key_name" {
   description = "Name of the existing AWS EC2 key pair used for SSH access."
   type        = string
 }
+
+variable "s3_bucket_name" {
+  description = "Existing S3 bucket that receives the Infra Monitor system report."
+  type        = string
+}
+
+variable "s3_object_key" {
+  description = "Exact S3 object key that the EC2 workload is allowed to upload."
+  type        = string
+  default     = "system_report.log"
+}
