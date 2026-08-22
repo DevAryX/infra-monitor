@@ -1265,3 +1265,90 @@ Least privilege means starting with what the app actually needs, not giving it e
 A successful upload proves the app works and the denied tests prove the permissions are properly limited.
 
 proper security improvement which took me half the night, terraform lwk carrying the project
+
+---
+
+## Day 14 — Connect the Bash Monitor to Prometheus
+
+Today I connected the original Bash monitor into the Prometheus stack.
+
+The script now publishes custom metrics through Node Exporter’s textfile collector.
+
+### Textfile Collector
+
+I added a shared Docker volume between:
+
+```
+infra-monitor
+node-exporter
+```
+
+The `infra-monitor` container writes the `.prom` file.
+
+Node Exporter reads it and exposes those metrics through its normal `/metrics` endpoint.
+
+So no extra HTTP service was needed.
+
+### Custom Metrics Added
+
+The Bash script now publishes metrics like:
+
+```
+infra_monitor_last_run_timestamp_seconds
+infra_monitor_last_success_timestamp_seconds
+infra_monitor_cpu_warning
+infra_monitor_memory_warning
+infra_monitor_disk_warning
+infra_monitor_overall_warning
+infra_monitor_report_success
+```
+
+### Safer Writes
+
+The script writes metrics to a temporary file first, then renames it to:
+
+```
+infra_monitor.prom
+```
+
+This avoids Node Exporter reading a half-written file.
+
+### Testing
+
+A successful run sets:
+
+```
+infra_monitor_report_success 1
+```
+
+A failed run sets:
+
+```
+infra_monitor_report_success 0
+```
+
+I also lowered the memory threshold to force a warning, and confirmed:
+
+```
+infra_monitor_memory_warning 1
+infra_monitor_overall_warning 1
+```
+
+Then I switched it back to normal and the warning cleared.
+
+### Grafana
+
+The dashboard now has extra app-specific panels:
+
+```
+Time Since Last Successful Report
+Infra Monitor Warning State
+Infra Monitor Report Status
+```
+
+### What I Learned
+
+The textfile collector is perfect for batch jobs like this because the Bash script does not need to run as a permanent web service.
+
+So yeah, the original Bash script is now properly connected into the Prometheus and Grafana monitoring stack, bout time
+
