@@ -94,25 +94,25 @@ Grafana is now partly managed as code.
 
 The Prometheus data source is defined in:
 
-```text id="8mlbhy"
+```
 monitoring/grafana/provisioning/datasources/prometheus.yml
 ```
 
 The dashboard provider is defined in:
 
-```text id="oh3pl7"
+```
 monitoring/grafana/provisioning/dashboards/dashboards.yml
 ```
 
 The main dashboard is stored as:
 
-```text id="pavvna"
+```
 monitoring/grafana/dashboards/infra-overview.json
 ```
 
 Stable UIDs are used:
 
-```text id="bkht7n"
+```
 Prometheus data source → prometheus
 Main dashboard          → infra-monitor-ec2-overview
 ```
@@ -194,6 +194,48 @@ Node Exporter is the exception because it uses host networking to collect proper
 Prometheus will later use Docker’s host-gateway mapping to reach Node Exporter from the internal monitoring network.
 
 No random container IP nonsense, the service names are cleaner.
+
+---
+
+### Custom Bash Metrics
+
+The original `system_report.sh` script now publishes custom Prometheus metrics through Node Exporter’s textfile collector.
+
+Metric flow:
+
+```
+system_report.sh
+↓
+infra_monitor.prom
+↓
+Node Exporter
+↓
+Prometheus
+↓
+Grafana
+```
+
+The custom metrics use the `infra_monitor_` prefix.
+
+They include things like:
+
+```
+report status
+resource warning state
+last run timestamp
+execution timing
+```
+
+So yeah, the Bash script is not just writing logs anymore.
+
+It is now feeding custom metrics into the monitoring stack.
+
+The implementation and metric definitions are documented in:
+
+```
+monitoring/prometheus/custom-metrics.md
+```
+
 
 ---
 
