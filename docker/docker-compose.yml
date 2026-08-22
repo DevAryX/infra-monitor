@@ -9,17 +9,20 @@ services:
       - runtime.env
     volumes:
       - ../logs:/app/logs
+      - node-exporter-textfiles:/app/metrics
 
   node-exporter:
     image: quay.io/prometheus/node-exporter:v1.12.1
     container_name: node-exporter
     command:
       - "--path.rootfs=/host"
+      - "--collector.textfile.directory=/var/lib/node_exporter/textfile_collector"
     network_mode: host
     pid: host
     restart: unless-stopped
     volumes:
       - "/:/host:ro,rslave"
+      - "node-exporter-textfiles:/var/lib/node_exporter/textfile_collector:ro"
 
   prometheus:
     image: prom/prometheus:v3.13.2
@@ -66,3 +69,4 @@ networks:
 volumes:
   prometheus-data:
   grafana-data:
+  node-exporter-textfiles:

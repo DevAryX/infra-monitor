@@ -26,6 +26,31 @@ MAX_SIZE="${INFRA_MONITOR_MAX_LOG_SIZE:-50000}"
 S3_BUCKET="${INFRA_MONITOR_S3_BUCKET:-}"
 S3_KEY="${INFRA_MONITOR_S3_KEY:-system_report.log}"
 
+METRICS_DIR="${INFRA_MONITOR_METRICS_DIR:-/app/metrics}"
+METRICS_FILE="$METRICS_DIR/infra_monitor.prom"
+
+CPU_WARNING=0
+MEMORY_WARNING=0
+DISK_WARNING=0
+OVERALL_WARNING=0
+REPORT_SUCCESS=0
+LAST_SUCCESS_TIMESTAMP=0
+
+if [ -f "$METRICS_FILE" ]; then
+    LAST_SUCCESS_TIMESTAMP="$(
+        awk '
+            $1 == "infra_monitor_last_success_timestamp_seconds" {
+                print $2
+            }
+        ' "$METRICS_FILE" 2>/dev/null \
+        | tail -n 1
+    )"
+
+    if ! [[ "$LAST_SUCCESS_TIMESTAMP" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        LAST_SUCCESS_TIMESTAMP=0
+    fi
+fi
+
 mkdir -p "$LOG_DIR"
 
 HOSTNAME="$(hostname)"
@@ -38,6 +63,73 @@ if [ -n "$S3_BUCKET" ]; then
 else
     S3_DESTINATION="Disabled"
 fi
+
+
+write_prometheus_metrics() {
+    mkdir -p "$METRICS_DIR"
+
+    local temp_file
+    local current_timestamp
+
+    temp_file="${METRICS_FILE}.$$"
+    current_timestamp="$(date +%s)"
+
+    if [ "$CPU_WARNING" -eq 1 ] \
+        || [ "$MEMORY_WARNING" -eq 1 ] \
+        || [ "$DISK_WARNING" -eq 1 ]; then
+        OVERALL_WARNING=1
+    else
+        OVERALL_WARNING=0
+    fi
+
+    cat > "$temp_file" <<EOF
+# HELP infra_monitor_last_run_timestamp_seconds Unix timestamp of the latest Infra Monitor execution.
+# TYPE infra_monitor_last_run_timestamp_seconds gauge
+infra_monitor_last_run_timestamp_seconds $current_timestamp
+
+# HELP infra_monitor_last_success_timestamp_seconds Unix timestamp of the most recent successful Infra Monitor execution.
+# TYPE infra_monitor_last_success_timestamp_seconds gauge
+infra_monitor_last_success_timestamp_seconds $LAST_SUCCESS_TIMESTAMP
+
+# HELP infra_monitor_cpu_warning Whether CPU usage exceeded the configured threshold.
+# TYPE infra_monitor_cpu_warning gauge
+infra_monitor_cpu_warning $CPU_WARNING
+
+# HELP infra_monitor_memory_warning Whether memory usage exceeded the configured threshold.
+# TYPE infra_monitor_memory_warning gauge
+infra_monitor_memory_warning $MEMORY_WARNING
+
+# HELP infra_monitor_disk_warning Whether root filesystem usage exceeded the configured threshold.
+# TYPE infra_monitor_disk_warning gauge
+infra_monitor_disk_warning $DISK_WARNING
+
+# HELP infra_monitor_overall_warning Whether any monitored resource exceeded its configured threshold.
+# TYPE infra_monitor_overall_warning gauge
+infra_monitor_overall_warning $OVERALL_WARNING
+
+# HELP infra_monitor_report_success Whether the latest Infra Monitor report completed successfully.
+# TYPE infra_monitor_report_success gauge
+infra_monitor_report_success $REPORT_SUCCESS
+EOF
+
+    mv "$temp_file" "$METRICS_FILE"
+}
+
+publish_metrics_on_exit() {
+    local exit_code=$?
+
+    if [ "$exit_code" -eq 0 ]; then
+        REPORT_SUCCESS=1
+        LAST_SUCCESS_TIMESTAMP="$(date +%s)"
+    else
+        REPORT_SUCCESS=0
+    fi
+
+    write_prometheus_metrics || true
+}
+
+trap publish_metrics_on_exit EXIT
+
 
 timestamp() {
     date "+%Y-%m-%d %H:%M:%S %Z"
@@ -99,21 +191,26 @@ status_message() {
     local threshold="$2"
     local label="$3"
     local state="OK"
+    local warning=0
 
     if [ "$usage" -gt "$threshold" ]; then
         state="HIGH"
+        warning=1
         OVERALL_STATUS="WARN"
     fi
 
     case "$label" in
         CPU)
             CPU_STATUS="$state (${usage}%/${threshold}%)"
+            CPU_WARNING="$warning"
             ;;
         Memory)
             MEMORY_STATUS="$state (${usage}%/${threshold}%)"
+            MEMORY_WARNING="$warning"
             ;;
         Disk)
             DISK_STATUS="$state (${usage}%/${threshold}%)"
+            DISK_WARNING="$warning"
             ;;
     esac
 }
