@@ -23,6 +23,7 @@ jobs:
           bash -n scripts/system_report.sh
           bash -n scripts/resource_check.sh
           bash -n scripts/deploy-infra-monitor.sh
+          bash -n scripts/monitoring_health_check.sh
 
       - name: Confirm Bash checks passed
         run: echo "Bash syntax checks passed"
@@ -85,7 +86,7 @@ jobs:
           EOF
 
       - name: Validate Docker Compose file
-        run: docker compose -f docker/docker-compose.yml config
+        run: docker compose -f docker/docker-compose.yml config --quiet
 
       - name: Test runtime environment configuration
         run: |
@@ -109,13 +110,181 @@ jobs:
 
           echo "Runtime environment variables verified successfully"
 
-      - name: Confirm Docker Compose checks passed
-        run: echo "Docker Compose validation and runtime checks passed"
+      - name: Confirm configuration checks passed
+        run: echo "Docker Compose, Prometheus, and Grafana validation passed"
+
+      - name: Validate Prometheus configuration
+        run: |
+          docker run --rm \
+            --entrypoint /bin/promtool \
+            -v "$PWD/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" \
+            prom/prometheus:v3.13.2 \
+            check config /etc/prometheus/prometheus.yml
+
+      - name: Validate Grafana dashboard JSON
+        run: |
+          python3 -m json.tool \
+            monitoring/grafana/dashboards/infra-overview.json \
+            > /dev/null
+
+          python3 - <<'PY'
+          import json
+
+          path = "monitoring/grafana/dashboards/infra-overview.json"
+
+          with open(path) as f:
+              dashboard = json.load(f)
+
+          expected_title = "Infra Monitor — EC2 Overview"
+          expected_uid = "infra-monitor-ec2-overview"
+
+          if dashboard.get("title") != expected_title:
+              raise SystemExit(
+                  f"Unexpected dashboard title: {dashboard.get('title')}"
+              )
+
+          if dashboard.get("uid") != expected_uid:
+              raise SystemExit(
+                  f"Unexpected dashboard UID: {dashboard.get('uid')}"
+              )
+
+          panels = dashboard.get("panels", [])
+
+          if len(panels) < 11:
+              raise SystemExit(
+                  f"Expected at least 11 panels, found {len(panels)}"
+              )
+
+          expected_panels = {
+              "CPU Utilisation",
+              "Memory Utilisation",
+              "Root Disk Usage",
+              "Prometheus Target Status",
+              "Network Received",
+              "Network Transmitted",
+              "Available Memory",
+              "System Uptime",
+              "Time Since Last Successful Report",
+              "Infra Monitor Warning State",
+              "Infra Monitor Report Status",
+          }
+
+          actual_panels = {
+              panel.get("title")
+              for panel in panels
+          }
+
+          missing = expected_panels - actual_panels
+
+          if missing:
+              raise SystemExit(
+                  f"Missing dashboard panels: {sorted(missing)}"
+              )
+
+          print(
+              f"Grafana dashboard valid: "
+              f"{len(panels)} panels"
+          )
+          PY
+
+  monitoring-integration:
+    name: Monitoring Integration Checks
+    runs-on: ubuntu-latest
+    needs: docker-compose-validation
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Create CI runtime environment
+        run: |
+          cat > docker/runtime.env <<'EOF'
+          INFRA_MONITOR_CPU_THRESHOLD=70
+          INFRA_MONITOR_MEMORY_THRESHOLD=70
+          INFRA_MONITOR_DISK_THRESHOLD=70
+          INFRA_MONITOR_MAX_LOG_SIZE=50000
+          INFRA_MONITOR_SYSTEM_LOG=/app/logs/ci-system-report.log
+          INFRA_MONITOR_ERROR_LOG=/app/logs/ci-error.log
+          INFRA_MONITOR_METRICS_DIR=/app/metrics
+          INFRA_MONITOR_S3_BUCKET=
+          INFRA_MONITOR_S3_KEY=system_report.log
+          EOF
+
+          chmod 600 docker/runtime.env
+
+      - name: Create CI Grafana environment
+        run: |
+          mkdir -p "$HOME/.config/infra-monitor"
+
+          cat > "$HOME/.config/infra-monitor/grafana.env" <<'EOF'
+          GF_SECURITY_ADMIN_USER=admin
+          GF_SECURITY_ADMIN_PASSWORD=ci-only-placeholder-not-a-real-secret
+          EOF
+
+          chmod 600 "$HOME/.config/infra-monitor/grafana.env"
+
+      - name: Validate Docker Compose configuration
+        run: |
+          docker compose \
+            -f docker/docker-compose.yml \
+            config --quiet
+
+      - name: Start monitoring integration stack
+        run: |
+          docker compose \
+            -f docker/docker-compose.yml \
+            up -d --build
+
+      - name: Show initial Compose state
+        run: |
+          docker compose \
+            -f docker/docker-compose.yml \
+            ps -a
+
+      - name: Run monitoring health checks
+        run: |
+          bash scripts/monitoring_health_check.sh
+
+      - name: Show diagnostics on failure
+        if: failure()
+        run: |
+          echo "=== COMPOSE STATE ==="
+          docker compose \
+            -f docker/docker-compose.yml \
+            ps -a || true
+
+          echo "=== INFRA MONITOR LOGS ==="
+          docker logs \
+            --tail 100 \
+            infra-monitor-compose || true
+
+          echo "=== NODE EXPORTER LOGS ==="
+          docker logs \
+            --tail 100 \
+            node-exporter || true
+
+          echo "=== PROMETHEUS LOGS ==="
+          docker logs \
+            --tail 100 \
+            prometheus || true
+
+          echo "=== GRAFANA LOGS ==="
+          docker logs \
+            --tail 100 \
+            grafana || true
+
+      - name: Clean up integration stack
+        if: always()
+        run: |
+          docker compose \
+            -f docker/docker-compose.yml \
+            down -v --remove-orphans
+
 
   deploy-to-ec2:
     name: Deploy To EC2
     runs-on: ubuntu-latest
-    needs: docker-compose-validation
+    needs: monitoring-integration
 
     steps:
       - name: Configure AWS credentials

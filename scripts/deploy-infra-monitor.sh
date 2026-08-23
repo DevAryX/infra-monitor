@@ -7,6 +7,7 @@ RUNTIME_ENV_FILE="$PROJECT_DIR/docker/runtime.env"
 GRAFANA_ENV_FILE="$HOME/.config/infra-monitor/grafana.env"
 LOG_DIR="$PROJECT_DIR/logs"
 LOG_FILE="$LOG_DIR/deploy.log"
+HEALTH_CHECK_SCRIPT="$PROJECT_DIR/scripts/monitoring_health_check.sh"
 
 fail() {
   echo "ERROR: $1" >&2
@@ -73,6 +74,9 @@ docker compose version
 info "Pulling latest code from main..."
 git pull origin main
 
+[ -f "$HEALTH_CHECK_SCRIPT" ] \
+  || fail "Monitoring health-check script not found: $HEALTH_CHECK_SCRIPT"
+
 info "Validating Docker Compose configuration..."
 docker compose -f "$COMPOSE_FILE" config >/dev/null
 
@@ -82,5 +86,56 @@ docker compose -f "$COMPOSE_FILE" up -d --build
 info "Current Docker Compose status:"
 docker compose -f "$COMPOSE_FILE" ps
 
+info "Deployment finished successfully"
+Change it to:
+info "Rebuilding and starting Docker Compose stack..."
+docker compose \
+  -f "$COMPOSE_FILE" \
+  up -d --build
+
+info "Current Docker Compose status:"
+docker compose \
+  -f "$COMPOSE_FILE" \
+  ps -a
+
+info "Running monitoring post-deployment health checks..."
+
+if ! bash "$HEALTH_CHECK_SCRIPT"; then
+  info "Monitoring health checks failed"
+  info "Collecting diagnostic information..."
+
+  docker compose \
+    -f "$COMPOSE_FILE" \
+    ps -a \
+    || true
+
+  printf '\n=== NODE EXPORTER LOGS ===\n'
+  docker logs \
+    --tail 100 \
+    node-exporter \
+    || true
+
+  printf '\n=== PROMETHEUS LOGS ===\n'
+  docker logs \
+    --tail 100 \
+    prometheus \
+    || true
+
+  printf '\n=== GRAFANA LOGS ===\n'
+  docker logs \
+    --tail 100 \
+    grafana \
+    || true
+
+  printf '\n=== INFRA MONITOR LOGS ===\n'
+  docker logs \
+    --tail 100 \
+    infra-monitor-compose \
+    || true
+
+  fail "Deployment completed but monitoring health checks failed"
+fi
+
+info "Monitoring stack verified successfully"
 info "Deployment finished successfully"
 info "============================================================"
