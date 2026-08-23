@@ -110,8 +110,6 @@ jobs:
 
           echo "Runtime environment variables verified successfully"
 
-      - name: Confirm configuration checks passed
-        run: echo "Docker Compose, Prometheus, and Grafana validation passed"
 
       - name: Validate Prometheus configuration
         run: |
@@ -186,6 +184,10 @@ jobs:
               f"{len(panels)} panels"
           )
           PY
+
+      - name: Confirm configuration checks passed
+        run: echo "Docker Compose, Prometheus, and Grafana validation passed"
+
 
   monitoring-integration:
     name: Monitoring Integration Checks
