@@ -1350,5 +1350,81 @@ Infra Monitor Report Status
 
 The textfile collector is perfect for batch jobs like this because the Bash script does not need to run as a permanent web service.
 
-So yeah, the original Bash script is now properly connected into the Prometheus and Grafana monitoring stack, bout time
+So, the original Bash script is now properly connected into the Prometheus and Grafana monitoring stack, bout time
+
+
+---
+
+## Day 15 — CI/CD Integration and Health Checks
+
+Today I connected the monitoring stack more properly into the GitHub Actions pipeline.
+
+I created:
+
+```
+scripts/monitoring_health_check.sh
+```
+
+This gives the project one reusable health check for CI and EC2.
+
+### What It Checks
+
+The `infra-monitor` container is a one-shot workload, so the script checks that it finishes with:
+
+```
+exit code 0
+```
+
+It also checks:
+
+```
+Node Exporter /metrics endpoint
+node_textfile_scrape_error = 0
+infra_monitor_* custom metrics exist
+infra_monitor_report_success = 1
+Prometheus health and readiness
+Prometheus and Node Exporter targets are UP
+Grafana health API
+dashboard JSON structure
+```
+
+The custom `.prom` metrics are also checked with:
+
+```
+promtool check metrics
+```
+
+Prometheus config is checked with:
+
+```
+promtool check config
+```
+
+The integration test starts the full monitoring stack on the GitHub runner before deployment.
+
+If the monitoring test fails, EC2 deployment does not run.
+
+### Post-Deployment Check
+
+After deployment, `deploy-infra-monitor.sh` now runs the same health check on EC2.
+
+So a successful `docker compose up` is not enough anymore.
+
+The stack actually has to become healthy.
+
+If it fails, the deploy script prints service status and recent logs before exiting.
+
+### Secret Safety
+
+Compose validation now uses quiet mode so config and env values are not dumped into CI logs.
+
+CI also uses temporary non-production Grafana credentials.
+
+### What I Learned
+
+Deployment and health are not the same thing.
+
+A container can start but still be broken inside.
+
+So yeah, this makes the pipeline safer because it checks that the monitoring stack actually works before and after deployment.
 
