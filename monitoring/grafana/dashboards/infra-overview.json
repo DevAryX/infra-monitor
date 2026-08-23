@@ -971,7 +971,7 @@
     ]
   },
   "timezone": "browser",
-  "title": "Infra Monitor - EC2 Overview",
+  "title": "Infra Monitor — EC2 Overview",
   "version": 13,
   "uid": "infra-monitor-ec2-overview",
   "id": null
