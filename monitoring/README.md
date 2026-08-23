@@ -128,6 +128,23 @@ So yeah, the dashboard setup is now actually reproducible instead of only surviv
 
 ---
 
+### CI/CD Monitoring Validation
+
+The GitHub Actions pipeline now checks the monitoring stack before deploying to EC2.
+
+Prometheus config is validated with `promtool`.
+
+The integration test starts Node Exporter, Prometheus, Grafana, and the Infra Monitor workload on the GitHub runner.
+
+It then checks that the custom metrics flow works end-to-end.
+
+After deployment, EC2 runs the same monitoring health check.
+
+if the monitoring services or custom metrics are broken, the deployment fails instead of silently shipping a dead stack.
+
+
+---
+
 ## Repository Layout
 
 Planned structure:
