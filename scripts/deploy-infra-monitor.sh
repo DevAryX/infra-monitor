@@ -80,14 +80,6 @@ git pull origin main
 info "Validating Docker Compose configuration..."
 docker compose -f "$COMPOSE_FILE" config >/dev/null
 
-info "Rebuilding and starting Docker Compose service..."
-docker compose -f "$COMPOSE_FILE" up -d --build
-
-info "Current Docker Compose status:"
-docker compose -f "$COMPOSE_FILE" ps
-
-info "Deployment finished successfully"
-Change it to:
 info "Rebuilding and starting Docker Compose stack..."
 docker compose \
   -f "$COMPOSE_FILE" \
