@@ -4,32 +4,85 @@
 
 This folder contains the monitoring setup for `infra-monitor`.
 
-The goal is to add proper observability to the project.
+The goal is to give the project proper observability, not just logs.
 
-The stack will collect Linux host metrics, store them over time, and display them in Grafana dashboards.
+The stack collects Linux host metrics, custom Bash app metrics, stores them in Prometheus, and displays them in Grafana.
 
-This will be added to the existing Docker Compose setup, not treated like a separate project.
+This is part of the existing Docker Compose deployment, not a separate random side project.
 
 ---
 
-## Planned Components
+## Final Architecture
+
+```text
+                         GitHub
+                            │
+                            ↓
+                      GitHub Actions
+                            │
+             ┌──────────────┼──────────────┐
+             ↓              ↓              ↓
+          Validate         Build      Integration
+             └──────────────┼──────────────┘
+                            ↓
+                         Deploy
+                            ↓
+                      Health Check
+                            ↓
+                         AWS EC2
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+             ↓              ↓              ↓
+      infra-monitor    Node Exporter   Prometheus
+             │              │              │
+             │       host metrics          │
+             │              │              │
+             └── .prom ─────┘              │
+                            │              │
+                            └───────→───────┘
+                                           │
+                                           ↓
+                                        Grafana
+                                           │
+                                     SSH tunnel only
+                                           │
+                                           ↓
+                                      Ubuntu browser
+
+
+EC2
+ ↓
+IAM Instance Profile
+ ↓
+Least-Privilege IAM Role
+ ↓
+S3 report upload
+```
+
+A monitored cloud setup with CI/CD, metrics, dashboards, secure access, and IAM.
+
+---
+
+## Components
 
 ### Infra Monitor
 
 The original Bash monitoring app.
 
-It currently:
+It:
 
 * Generates system reports
 * Writes logs
-* Uploads to S3 when configured
-* Handles basic errors
+* Uploads reports to S3 when configured
+* Publishes custom Prometheus metrics
+* Runs as a one-shot container workload
 
-Later, it will also expose custom metrics.
+The app is not meant to run forever. It runs the report, writes the output, then exits successfully.
 
 ### Node Exporter
 
-Node Exporter collects Linux host metrics.
+Node Exporter collects Linux host metrics from the EC2 server.
 
 Examples:
 
@@ -39,144 +92,43 @@ Examples:
 * Network traffic
 * System uptime
 
-Basically, it lets Prometheus see what the server is doing.
-
-### Current Node Exporter Implementation
-
-Node Exporter is now running locally through Docker Compose.
-
-It uses:
-
-```yaml
-network_mode: host
-pid: host
-```
-
-The Ubuntu host filesystem is mounted read-only at:
-
-```text
-/host
-```
-
-Node Exporter is configured with:
-
-```text
---path.rootfs=/host
-```
-
-This lets the containerised exporter read host-level Linux metrics instead of only watching its own container environment.
-
-The local metrics endpoint is:
-
-```text
-http://localhost:9100/metrics
-```
-
-Prometheus will be connected to this endpoint during Day 4.
+It also exposes custom `infra_monitor_*` metrics through the textfile collector.
 
 ### Prometheus
 
-Prometheus will scrape metrics from Node Exporter and store them as time-series data.
+Prometheus scrapes metrics from Node Exporter and stores them as time-series data.
 
-It will handle:
+It handles:
 
-* Metric collection
-* Local metric storage
+* Metric scraping
 * PromQL queries
-* Target health checks
+* Target health
+* Local metric storage
 * Data source for Grafana
 
 ### Grafana
 
-### Grafana Provisioning
+Grafana visualises the Prometheus metrics.
 
-Grafana is now partly managed as code.
-
-The Prometheus data source is defined in:
-
-```
-monitoring/grafana/provisioning/datasources/prometheus.yml
-```
-
-The dashboard provider is defined in:
-
-```
-monitoring/grafana/provisioning/dashboards/dashboards.yml
-```
-
-The main dashboard is stored as:
-
-```
-monitoring/grafana/dashboards/infra-overview.json
-```
-
-Stable UIDs are used:
-
-```
-Prometheus data source → prometheus
-Main dashboard          → infra-monitor-ec2-overview
-```
-
-The provisioning files and dashboard folder are mounted read-only into the Grafana container.
-
-This means Grafana no longer depends on me manually creating the data source and dashboard in the UI.
-
-I also tested a fresh `grafana-data` volume, and Grafana automatically brought back the Prometheus data source and the full dashboard from the Git-tracked files.
-
-So yeah, the dashboard setup is now actually reproducible instead of only surviving through a Docker volume.
-
-
----
-
-### CI/CD Monitoring Validation
-
-The GitHub Actions pipeline now checks the monitoring stack before deploying to EC2.
-
-Prometheus config is validated with `promtool`.
-
-The integration test starts Node Exporter, Prometheus, Grafana, and the Infra Monitor workload on the GitHub runner.
-
-It then checks that the custom metrics flow works end-to-end.
-
-After deployment, EC2 runs the same monitoring health check.
-
-if the monitoring services or custom metrics are broken, the deployment fails instead of silently shipping a dead stack.
-
-
----
-
-## Repository Layout
-
-Planned structure:
+It provides the main dashboard:
 
 ```text
-monitoring/
-├── prometheus/
-│   └── prometheus.yml
-├── grafana/
-│   ├── provisioning/
-│   │   ├── datasources/
-│   │   │   └── prometheus.yml
-│   │   └── dashboards/
-│   │       └── dashboards.yml
-│   └── dashboards/
-│       └── infra-overview.json
-└── README.md
+Infra Monitor — EC2 Overview
 ```
 
-Some files will be added later as each monitoring part is slowly being built.
+This dashboard shows EC2 system health and custom Infra Monitor app health.
 
 ---
 
-## Docker Compose Plan
+## Docker Compose Stack
 
-The monitoring services will be added to:
+The monitoring stack runs through:
 
 ```text
 docker/docker-compose.yml
 ```
 
-Planned services:
+Current services:
 
 ```text
 infra-monitor
@@ -189,38 +141,226 @@ The goal is to keep one Compose file as the main source of truth for the full st
 
 ---
 
-## Networking Plan
+## Networking
 
-The monitoring containers will use an internal Docker network:
+The monitoring services use the internal Docker network:
 
 ```text
 monitoring-net
 ```
 
-Services will talk using Docker Compose names instead of hard-coded IP addresses.
-
-Current planned connections:
+Grafana connects to Prometheus using the Compose service name:
 
 ```text
-Prometheus → host.docker.internal:9100
-Grafana → prometheus:9090
+http://prometheus:9090
 ```
 
-Node Exporter is the exception because it uses host networking to collect proper host metrics.
+Node Exporter uses host networking so it can read proper host-level Linux metrics.
 
-Prometheus will later use Docker’s host-gateway mapping to reach Node Exporter from the internal monitoring network.
+Prometheus reaches Node Exporter through:
 
-No random container IP nonsense, the service names are cleaner.
+```text
+host.docker.internal:9100
+```
+
+using Docker’s host gateway mapping.
+
+No hard-coded container IPs. Service names and host gateway are cleaner.
 
 ---
 
-### Custom Bash Metrics
+## Node Exporter
+
+Node Exporter runs with:
+
+```yaml
+network_mode: host
+pid: host
+```
+
+The host filesystem is mounted read-only at:
+
+```text
+/host
+```
+
+and Node Exporter uses:
+
+```text
+--path.rootfs=/host
+```
+
+This lets it report host metrics instead of only seeing inside its own container.
+
+Metrics endpoint:
+
+```text
+http://localhost:9100/metrics
+```
+
+---
+
+## Prometheus
+
+Prometheus runs through Docker Compose using:
+
+```text
+prom/prometheus:v3.13.2
+```
+
+Config file:
+
+```text
+monitoring/prometheus/prometheus.yml
+```
+
+Current scrape targets:
+
+```text
+localhost:9090
+host.docker.internal:9100
+```
+
+Prometheus stores data in:
+
+```text
+/prometheus
+```
+
+using the named volume:
+
+```text
+prometheus-data
+```
+
+Retention is configured for seven days:
+
+```text
+--storage.tsdb.retention.time=7d
+```
+
+Local access:
+
+```text
+http://localhost:9090
+```
+
+The port is bound to localhost, not every network interface.
+
+---
+
+## Grafana
+
+Grafana runs through Docker Compose using:
+
+```text
+grafana/grafana:13.1.3
+```
+
+Local binding:
+
+```text
+127.0.0.1:3000
+```
+
+Local access:
+
+```text
+http://localhost:3000
+```
+
+Grafana stores runtime data in:
+
+```text
+/var/lib/grafana
+```
+
+using the named volume:
+
+```text
+grafana-data
+```
+
+---
+
+## Grafana Provisioning
+
+Grafana is now partly managed as code.
+
+The Prometheus data source is defined in:
+
+```text
+monitoring/grafana/provisioning/datasources/prometheus.yml
+```
+
+The dashboard provider is defined in:
+
+```text
+monitoring/grafana/provisioning/dashboards/dashboards.yml
+```
+
+The main dashboard is stored as:
+
+```text
+monitoring/grafana/dashboards/infra-overview.json
+```
+
+Stable UIDs are used:
+
+```text
+Prometheus data source → prometheus
+Main dashboard          → infra-monitor-ec2-overview
+```
+
+The provisioning files and dashboard folder are mounted read-only into the Grafana container.
+
+This means Grafana does not depend on me manually clicking around in the UI to recreate the main dashboard.
+
+I tested a fresh `grafana-data` volume, and Grafana automatically brought back the Prometheus data source and dashboard from the Git-tracked files.
+
+So the dashboard setup is now reproducible.
+
+---
+
+## Main Dashboard
+
+The main dashboard is:
+
+```text
+Infra Monitor — EC2 Overview
+```
+
+It shows:
+
+```text
+CPU utilisation
+Memory utilisation
+Root filesystem usage
+Prometheus target status
+Network receive traffic
+Network transmit traffic
+Available memory
+System uptime
+Time since last successful report
+Infra Monitor warning state
+Infra Monitor report status
+```
+
+Dashboard notes are stored in:
+
+```text
+monitoring/grafana/dashboard-notes.md
+```
+
+---
+
+## Custom Bash Metrics
 
 The original `system_report.sh` script now publishes custom Prometheus metrics through Node Exporter’s textfile collector.
 
 Metric flow:
 
-```
+```text
 system_report.sh
 ↓
 infra_monitor.prom
@@ -234,123 +374,101 @@ Grafana
 
 The custom metrics use the `infra_monitor_` prefix.
 
-They include things like:
+Examples:
 
+```text
+infra_monitor_last_run_timestamp_seconds
+infra_monitor_last_success_timestamp_seconds
+infra_monitor_cpu_warning
+infra_monitor_memory_warning
+infra_monitor_disk_warning
+infra_monitor_overall_warning
+infra_monitor_report_success
 ```
-report status
-resource warning state
-last run timestamp
-execution timing
-```
 
-So yeah, the Bash script is not just writing logs anymore.
+So the Bash script is not just writing logs anymore.
 
-It is now feeding custom metrics into the monitoring stack.
+It now feeds application metrics into the monitoring stack.
 
-The implementation and metric definitions are documented in:
+Metric definitions are documented in:
 
-```
+```text
 monitoring/prometheus/custom-metrics.md
 ```
 
-
 ---
 
-### Persistence Testing
+## Persistence Testing
 
-The monitoring stack uses named Docker volumes for data that needs to survive container recreation.
+The monitoring stack uses named Docker volumes for data that needs to survive normal container recreation.
 
 Prometheus uses:
 
-```
+```text
 prometheus-data → /prometheus
 ```
 
 Grafana uses:
 
-```
+```text
 grafana-data → /var/lib/grafana
 ```
 
-I tested this by stopping and recreating the Compose containers.
+I tested stopping and recreating the Compose containers.
 
 After recreation:
 
-```
+```text
 Prometheus kept old metrics
+Grafana kept its state
 Grafana kept the dashboard
 Grafana kept the Prometheus data source
-Grafana kept its settings
 new containers reattached the same volumes
 ```
 
 The full test is documented in:
 
-```
+```text
 monitoring/persistence-test.md
 ```
 
-So, Docker volumes protect the monitoring state from normal container recreation.
+Persistence protects state from normal container recreation.
 
-But this is still not full reproducibility from Git yet.
+Provisioning protects the important Grafana config if the Grafana volume is lost.
 
-Grafana provisioning will be added next so the dashboard and data source can be rebuilt from version-controlled files.
+Both matter.
 
 ---
 
-### EC2 Deployment
+## EC2 Deployment
 
-The complete monitoring stack has now been deployed to the Terraform-managed Amazon Linux EC2 server.
+The full monitoring stack has been deployed to the Terraform-managed Amazon Linux EC2 server.
 
-The cloud monitoring flow is:
+Cloud monitoring flow:
 
 ```text
 Amazon Linux EC2
-    ↓
+↓
 Node Exporter
-    ↓
+↓
 Prometheus
-    ↓
+↓
 Grafana
+↓
+Infra Monitor — EC2 Overview
 ```
 
-The stack is deployed using the existing GitHub Actions CI/CD pipeline.
+Deployment uses the existing GitHub Actions CI/CD pipeline.
 
-Prometheus and Grafana remain bound to EC2 localhost and can be accessed through SSH port forwarding.
+Deployment and verification are documented in:
 
-Deployment and results are documented in:
-
-```
+```text
 monitoring/ec2-deployment-test.md
 ```
 
 ---
 
-## Security Plan
-
-Monitoring tools should not be exposed to the public internet for no reason.
-
-Planned access:
-
-```text
-Node Exporter → host/local access only
-Prometheus    → internal only / local troubleshooting
-Grafana       → accessed through SSH tunnel
-```
-
-Planned ports:
-
-```text
-Node Exporter → 9100
-Prometheus    → 9090
-Grafana       → 3000
-```
-
-The idea is to keep the monitoring stack useful but not wide open.
-
----
-
-### Secure Monitoring Access
+## Secure Monitoring Access
 
 The monitoring tools are not exposed through permanent public Security Group rules.
 
@@ -389,7 +507,7 @@ localhost:13000 → EC2 Grafana
 localhost:19090 → EC2 Prometheus
 ```
 
-The full test is documented in:
+The full secure access test is documented in:
 
 ```text
 monitoring/secure-access.md
@@ -399,198 +517,29 @@ So yeah, the services are reachable when I need them, but not just sitting open 
 
 ---
 
-## Out of Scope, for now
+## Secrets and Runtime Config
 
-This phase will not add:
+Runtime configuration and real credentials are kept separate from safe example files.
 
-```text
-Kubernetes
-Loki
-distributed tracing
-external databases
-public reverse proxy
-random extra monitoring tools
-```
-
-The goal is simple: understand Node Exporter, Prometheus, and Grafana properly first.
-
-No need to overdo it.
-
----
-
-### Current Prometheus Implementation
-
-Prometheus now runs locally through Docker Compose using:
+Tracked example file:
 
 ```text
-prom/prometheus:v3.13.2
+docker/runtime.env.example
 ```
 
-The config file is stored at:
+Ignored real runtime file:
 
 ```text
-monitoring/prometheus/prometheus.yml
+docker/runtime.env
 ```
 
-Prometheus currently scrapes:
+External Grafana credentials:
 
 ```text
-localhost:9090
-host.docker.internal:9100
+~/.config/infra-monitor/grafana.env
 ```
 
-The first target lets Prometheus monitor itself.
-
-The second target connects to Node Exporter, which is running with host networking.
-
-Prometheus uses Docker’s host gateway mapping:
-
-```yaml
-extra_hosts:
-  - "host.docker.internal=host-gateway"
-```
-
-This lets the Prometheus container reach Node Exporter through the Docker host.
-
-Prometheus stores its data in:
-
-```text
-/prometheus
-```
-
-using the named Docker volume:
-
-```text
-prometheus-data
-```
-
-Prometheus retention is configured for seven days using:
-
-```text
---storage.tsdb.retention.time=7d
-```
-
-Local Prometheus access is available at:
-
-```text
-http://localhost:9090
-```
-
-The port is bound to the Ubuntu VM loopback interface, so it is not exposed on all network interfaces.
-
----
-
-### Current Grafana Implementation
-
-Grafana now runs locally through Docker Compose using:
-
-```text
-grafana/grafana:13.1.3
-```
-
-Grafana listens on port:
-
-```text
-3000
-```
-
-The local binding is:
-
-```text
-127.0.0.1:3000
-```
-
-So I can access it from the Ubuntu VM at:
-
-```text
-http://localhost:3000
-```
-
-without exposing it on every network interface.
-
-Grafana and Prometheus both use the Docker network:
-
-```text
-monitoring-net
-```
-
-Grafana connects to Prometheus with:
-
-```text
-http://prometheus:9090
-```
-
-This works because Docker Compose service names can be used between containers.
-
-Important note: `localhost` inside the Grafana container would mean Grafana itself, not Prometheus.
-
-Grafana stores its data in:
-
-```text
-/var/lib/grafana
-```
-
-using the named volume:
-
-```text
-grafana-data
-```
-
-The Prometheus data source was configured manually for now.
-
-Later, Grafana provisioning will move the data source and dashboard setup into files stored in Git.
-
----
-
-### Main Dashboard
-
-The main Grafana dashboard is:
-
-```text
-Infra Monitor — EC2 Overview
-```
-
-It currently shows:
-
-```text
-CPU utilisation
-Memory utilisation
-Root filesystem usage
-Prometheus target status
-Network receive traffic
-Network transmit traffic
-Available memory
-System uptime
-```
-
-The dashboard uses the PromQL queries created earlier in the monitoring phase.
-
-Dashboard notes are stored at:
-
-```text
-monitoring/grafana/dashboard-notes.md
-```
-
-Right now, the dashboard is saved through the `grafana-data` Docker volume.
-
-Later, I will export it as JSON and provision it from Git, so the dashboard can be recreated automatically instead of only living inside Grafana.
-
----
-## Environment Flow
-
-```text
-Windows 11 host
-    ↓
-Ubuntu 22.04 VM
-    ↓
-Terraform, Git, SSH
-    ↓
-Amazon Linux 2023 EC2
-    ↓
-Docker Compose monitoring stack
-```
-
-The EC2 private key stays outside the repo.
+The EC2 private key stays outside the repo as well.
 
 It should never be copied into:
 
@@ -602,8 +551,147 @@ GitHub Actions logs
 monitoring config
 ```
 
+---
+
+## IAM Least Privilege
+
+The EC2 workload now uses a Terraform-managed IAM role and instance profile.
+
+Permission flow:
+
+```text
+EC2
+↓
+IAM Instance Profile
+↓
+Least-Privilege IAM Role
+↓
+S3 report upload
+```
+
+The monitoring app does not need long-lived AWS access keys on the server.
+
+The custom IAM policy only allows the S3 upload operation the app actually needs.
+
+Much cleaner than leaving AWS keys sitting around.
+
+---
+
+## CI/CD Monitoring Validation
+
+The GitHub Actions pipeline now checks the monitoring stack before deploying to EC2.
+
+Current flow:
+
+```text
+Bash checks
+↓
+Docker build
+↓
+Compose + monitoring config validation
+↓
+Monitoring integration test
+↓
+EC2 deployment
+↓
+Post-deploy health check
+```
+
+Prometheus config is validated with `promtool`.
+
+The integration test starts Node Exporter, Prometheus, Grafana, and the Infra Monitor workload on the GitHub runner.
+
+It then checks that the custom metrics flow works end-to-end.
+
+After deployment, EC2 runs the same monitoring health check.
+
+If the monitoring services or custom metrics are broken, the deployment fails instead of silently shipping a dead stack.
+
+---
+
+## Failure and Recovery Testing
+
+The final monitoring phase tested:
+
+```text
+Node Exporter failure and recovery
+Grafana container recreation
+Prometheus container recreation
+Prometheus persistent history
+EC2 reboot
+restart policies
+secure port exposure
+IAM role access
+S3 upload
+CI/CD health checks
+```
+
+The stack recovered while keeping the expected data and security controls.
+
+This is stronger than just taking screenshots when everything is already healthy.
+
+---
+
+## Repository Layout
+
+```text
+monitoring/
+├── prometheus/
+│   ├── prometheus.yml
+│   ├── promql-basics.md
+│   └── custom-metrics.md
+├── grafana/
+│   ├── dashboard-notes.md
+│   ├── provisioning/
+│   │   ├── datasources/
+│   │   │   └── prometheus.yml
+│   │   └── dashboards/
+│   │       └── dashboards.yml
+│   └── dashboards/
+│       └── infra-overview.json
+├── persistence-test.md
+├── iam-least-privilege.md
+├── ec2-deployment-test.md
+└── README.md
+```
+
+---
+
+## Out of Scope
+
+This phase does not add:
+
+```text
+Kubernetes
+Loki
+distributed tracing
+external databases
+public reverse proxy
+random extra monitoring tools
+```
+
+The point was to understand Node Exporter, Prometheus, Grafana, secure access, and IAM properly first.
+
+---
+
+## Environment Flow
+
+```text
+Windows 11 host
+↓
+Ubuntu 22.04 VM
+↓
+Terraform, Git, SSH
+↓
+Amazon Linux 2023 EC2
+↓
+Docker Compose monitoring stack
+```
+
+---
+
 ## Result
 
-This monitoring stack will move `infra-monitor` from basic logs to proper metrics and dashboards.
+This monitoring stack moved `infra-monitor` from basic logs to proper metrics, dashboards, custom app health, secure access, CI/CD validation, and least-privilege AWS permissions.
 
-Inshallah by the end of this phase, the project should show what the EC2 server is doing instead of only writing reports in the background.
+Inshallah, this is now a proper monitored cloud infrastructure project, not just a Bash script running in the background.
