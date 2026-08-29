@@ -78,7 +78,7 @@ git pull origin main
   || fail "Monitoring health-check script not found: $HEALTH_CHECK_SCRIPT"
 
 info "Validating Docker Compose configuration..."
-docker compose -f "$COMPOSE_FILE" config >/dev/null
+docker compose -f "$COMPOSE_FILE" config --quiet
 
 info "Rebuilding and starting Docker Compose stack..."
 docker compose \

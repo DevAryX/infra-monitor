@@ -84,6 +84,8 @@ jobs:
           GF_SECURITY_ADMIN_USER=admin
           GF_SECURITY_ADMIN_PASSWORD=ci-only-placeholder-not-a-real-secret
           EOF
+          
+          chmod 600 "$HOME/.config/infra-monitor/grafana.env"
 
       - name: Validate Docker Compose file
         run: docker compose -f docker/docker-compose.yml config --quiet
