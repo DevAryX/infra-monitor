@@ -208,6 +208,34 @@ This phase moved the project from a containerised monitoring service to a CI/CD-
 
 ---
 
+## August 2026 — Monitoring & Security
+
+August focused on adding observability and security improvements to the existing cloud setup.
+
+Main improvements:
+
+* Added a dedicated `monitoring/` folder
+* Added Node Exporter for Linux host metrics
+* Added Prometheus for metric scraping and time-series storage
+* Added Grafana for dashboards and visualisation
+* Built the `Infra Monitor — EC2 Overview` dashboard
+* Added PromQL queries for CPU, memory, disk, network, uptime, and target health
+* Added persistent Docker volumes for Prometheus and Grafana data
+* Tested monitoring persistence after container recreation
+* Provisioned the Grafana data source and dashboard from Git-tracked files
+* Deployed the full monitoring stack to the Terraform-managed EC2 instance
+* Accessed Grafana and Prometheus securely using SSH tunnels
+* Confirmed monitoring ports were not exposed publicly
+* Cleaned up runtime environment files and secret handling
+* Added a Terraform-managed IAM role and least-privilege S3 upload policy
+* Added custom `infra_monitor_*` Prometheus metrics from the Bash monitoring script
+* Added CI/CD monitoring validation and post-deployment health checks
+* Tested failure, recovery, EC2 reboot behaviour, and final monitoring health
+
+This phase moved the project from a CI/CD-enabled cloud service to a monitored and security-aware cloud system using Prometheus, Node Exporter, Grafana, SSH-based access, custom Bash metrics, and least-privilege IAM permissions.
+
+---
+
 ## Cron Setup
 
 Edit your crontab:
