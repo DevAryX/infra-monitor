@@ -1426,5 +1426,106 @@ Deployment and health are not the same thing.
 
 A container can start but still be broken inside.
 
-So yeah, this makes the pipeline safer because it checks that the monitoring stack actually works before and after deployment.
+So this makes the pipeline safer because it checks that the monitoring stack actually works before and after deployment.
 
+---
+
+## Day 16 — Failure Testing, Recovery and Final Verification
+
+Today I did the final failure testing for the August monitoring and security phase.
+
+The goal was to prove the stack can break, recover, and still stay secure
+
+### Node Exporter Failure
+
+I stopped Node Exporter on purpose.
+
+Prometheus changed the target from:
+
+```
+UP → DOWN
+```
+
+and:
+
+```
+up{job="node-exporter"}
+```
+
+changed from `1` to `0`.
+
+The monitoring health check also failed while Node Exporter was down.
+
+After restarting it, Prometheus detected the recovery and the health check passed again.
+
+### Grafana Recovery
+
+I removed and recreated the Grafana container.
+
+The dashboard came back because Grafana uses:
+
+```
+persistent volume
++
+Git-tracked provisioning files
+```
+
+The `Infra Monitor — EC2 Overview` dashboard returned successfully.
+
+### Prometheus Persistence
+
+I removed and recreated the Prometheus container without deleting the `prometheus-data` volume.
+
+Old metric data was still queryable after the new container started.
+
+So Prometheus history survived container replacement.
+
+### EC2 Reboot
+
+I rebooted the full EC2 instance.
+
+After the server came back, Docker started again and the monitoring services returned through their restart policies.
+
+The full monitoring health check passed after reboot.
+
+### Secure Access Check
+
+I repeated the public port test after reboot.
+
+Final result:
+
+```
+22   SSH           → reachable from authorised source
+3000 Grafana       → blocked
+9090 Prometheus    → blocked
+9100 Node Exporter → blocked
+```
+
+Grafana and Prometheus still worked through SSH tunnelling.
+
+### IAM Check
+
+The Infra Monitor container still used the EC2 IAM role for AWS access.
+
+No long-term AWS keys were needed on the server.
+
+The intended S3 upload still worked.
+
+### Final Result
+
+The monitoring stack can now:
+
+```
+detect failures
+recover from container replacement
+keep metric history
+survive EC2 reboot
+stay private from the public internet
+use least-privilege IAM access
+```
+
+### What I Learned
+
+Healthy screenshots are good, but failure testing is stronger.
+
+The proper proof is being able to break parts of the system and explain what failed, how it was detected, and how it recovered.
