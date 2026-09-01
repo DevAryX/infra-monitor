@@ -8,47 +8,95 @@ This makes the setup easier to rebuild, understand, and improve over time.
 
 ## What This Terraform Setup Creates
 
-Right now, this Terraform config creates:
+The Terraform configuration manages the AWS infrastructure required by `infra-monitor`.
 
-* An EC2 instance for the infra-monitor project
-* A Security Group for network access
-* An SSH rule restricted to my own public IP
-* An outbound rule so the instance can access the internet
-* Outputs for useful details like the public IP and SSH command
+It currently provisions and configures:
 
-The EC2 instance uses Amazon Linux 2023 and is created inside the default AWS VPC.
+- An Amazon Linux 2023 EC2 instance
+- A stable Elastic IP address
+- A Security Group with restricted SSH ingress
+- Outbound internet access
+- A Terraform-managed IAM role
+- A least-privilege S3 upload policy
+- An EC2 instance profile
+- An encrypted gp3 root EBS volume
+- IMDSv2-only instance metadata access
+- SHA-verified Terraform user data
+- A deterministic `bootstrap.sh` process
+- `firewalld` configuration
+- Docker and pinned Docker CLI plugins
+- Runtime environment creation
+- Grafana credential generation
+- Docker Compose deployment
+- Monitoring and IAM verification
+
+The EC2 host is intentionally disposable.
+
+Terraform can replace the instance while the Elastic IP remains stable, and the hardened bootstrap reconstructs the application and monitoring stack automatically.
 
 ## Current Architecture
 
-```text
+```
 Ubuntu VM
-  ↓
-Terraform CLI
-  ↓
-AWS Provider
-  ↓
-Default VPC
-  ↓
-Security Group
-  ↓
-EC2 Instance
-  ↓
-SSH Access
+    │
+    ↓
+Terraform
+    │
+    ├── Security Group
+    ├── Elastic IP
+    ├── IAM Role + Policy
+    ├── Instance Profile
+    └── encrypted gp3 EBS
+    │
+    ↓
+Amazon Linux 2023 EC2
+    │
+    ↓
+SHA-verified user data
+    │
+    ↓
+terraform/bootstrap.sh
+    │
+    ├── firewalld
+    ├── Docker
+    ├── pinned Buildx
+    ├── pinned Compose
+    ├── runtime configuration
+    └── Grafana credentials
+    │
+    ↓
+Docker Compose monitoring stack
 ```
 
-Terraform runs from my Ubuntu 22.04 VM inside VirtualBox on my Windows 11 PC.
-
-So my Ubuntu VM is basically the control machine for managing AWS.
+Terraform is run from the Ubuntu VM, which acts as the infrastructure control machine.
 
 ## Files Explained
 
 ### `main.tf`
 
-This is the main Terraform file.
+This is the main infrastructure definition.
 
-It defines the AWS provider, default VPC lookup, Amazon Linux 2023 AMI lookup, Security Group, SSH rule, outbound rule, and EC2 instance.
+It defines the AWS provider, Amazon Linux 2023 AMI lookup, Security Group rules, Elastic IP, EC2 instance, encrypted gp3 root volume, IMDSv2 settings, hardened user-data rendering, and the Elastic IP association.
 
-Basically, this is where most of the actual infrastructure is described.
+The EC2 user data is rendered from `user_data.sh.tftpl`, while Terraform calculates the SHA256 of `bootstrap.sh` so the instance verifies the bootstrap script before executing it.
+
+### `iam.tf`
+
+Defines the EC2 IAM role, least-privilege S3 upload policy, policy attachment, and instance profile.
+
+The workload uses temporary EC2 role credentials instead of long-lived AWS access keys.
+
+### `user_data.sh.tftpl`
+
+A small Terraform-rendered first-stage launcher.
+
+It installs the minimum required dependencies, clones or synchronises the repository, verifies the SHA256 of `bootstrap.sh`, passes runtime values into the bootstrap process, and executes the verified script.
+
+### `bootstrap.sh`
+
+Contains the deterministic fresh-instance bootstrap.
+
+It installs and configures host packages, `firewalld`, Docker, pinned Docker Buildx and Compose plugins, runtime configuration, Grafana credentials, the Compose stack, IAM verification, and final monitoring health checks.
 
 ### `variables.tf`
 
@@ -110,7 +158,7 @@ Before running this setup, I need:
 Expected SSH key path:
 
 ```bash
-ssh/infra-monitor-key.pem
+~/ssh/infra-monitor-key.pem
 ```
 
 The private key should never be committed to GitHub.
@@ -171,7 +219,7 @@ $(cd terraform && terraform output -raw ssh_command)
 Or connect manually:
 
 ```bash
-ssh -i ssh/infra-monitor-key.pem ec2-user@PUBLIC_IP
+ssh -i ~/ssh/infra-monitor-key.pem ec2-user@PUBLIC_IP
 ```
 
 Useful checks once connected:

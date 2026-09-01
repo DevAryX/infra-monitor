@@ -390,12 +390,6 @@ So the Bash script is not just writing logs anymore.
 
 It now feeds application metrics into the monitoring stack.
 
-Metric definitions are documented in:
-
-```text
-monitoring/prometheus/custom-metrics.md
-```
-
 ---
 
 ## Persistence Testing
@@ -505,12 +499,6 @@ Because my Ubuntu VM also has local monitoring running, EC2 uses different local
 ```text
 localhost:13000 → EC2 Grafana
 localhost:19090 → EC2 Prometheus
-```
-
-The full secure access test is documented in:
-
-```text
-monitoring/secure-access.md
 ```
 
 So yeah, the services are reachable when I need them, but not just sitting open on the internet.
@@ -638,8 +626,7 @@ This is stronger than just taking screenshots when everything is already healthy
 monitoring/
 ├── prometheus/
 │   ├── prometheus.yml
-│   ├── promql-basics.md
-│   └── custom-metrics.md
+│   └──  promql-basics.md
 ├── grafana/
 │   ├── dashboard-notes.md
 │   ├── provisioning/
