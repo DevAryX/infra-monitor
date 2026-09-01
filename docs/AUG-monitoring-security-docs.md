@@ -1529,3 +1529,5 @@ use least-privilege IAM access
 Healthy screenshots are good, but failure testing is stronger.
 
 The proper proof is being able to break parts of the system and explain what failed, how it was detected, and how it recovered.
+
+commit test
