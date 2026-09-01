@@ -6,6 +6,10 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: infra-monitor-main
+  cancel-in-progress: true
+
 jobs:
   bash-checks:
     name: Bash Syntax Checks
@@ -381,6 +385,7 @@ jobs:
         run: |
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
+
       - name: Run deployment script on EC2
         run: |
           ssh \
@@ -391,10 +396,18 @@ jobs:
 
               cd "$HOME/infra-monitor"
 
-              git fetch origin main
-              git reset --hard origin/main
+              TARGET_COMMIT="${{ github.sha }}"
 
-              bash scripts/deploy-infra-monitor.sh
+              echo "Deploying workflow commit: $TARGET_COMMIT"
+
+              git fetch --quiet origin main
+
+              git cat-file -e "${TARGET_COMMIT}^{commit}"
+
+              git reset --hard "$TARGET_COMMIT"
+
+              DEPLOY_COMMIT="$TARGET_COMMIT" \
+                bash scripts/deploy-infra-monitor.sh
             '
 
       - name: Remove temporary SSH access
