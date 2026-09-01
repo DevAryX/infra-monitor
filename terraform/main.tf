@@ -60,17 +60,47 @@ resource "aws_instance" "infra_monitor" {
 
   iam_instance_profile = aws_iam_instance_profile.infra_monitor.name
 
-  user_data                   = file("${path.module}/user_data.sh")
+  user_data = templatefile("${path.module}/user_data.sh.tftpl", {
+    repository_url    = "https://github.com/DevAryX/infra-monitor.git"
+    repository_branch = "main"
+
+    bootstrap_sha256 = filesha256("${path.module}/bootstrap.sh")
+
+    s3_bucket_name = var.s3_bucket_name
+    s3_object_key  = var.s3_object_key
+  })
+
   user_data_replace_on_change = true
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+    http_protocol_ipv6          = "disabled"
+    instance_metadata_tags      = "disabled"
+  }
+
+  root_block_device {
+    volume_type           = "gp3"
+    volume_size           = 8
+    iops                  = 3000
+    throughput            = 125
+    encrypted             = true
+    delete_on_termination = true
+  }
 
   lifecycle {
     ignore_changes = [ami]
   }
 
+  depends_on = [
+    aws_iam_role_policy_attachment.infra_monitor_s3_upload
+  ]
+
   tags = {
     Name        = "${var.project_name}-ec2"
     Project     = var.project_name
-    Phase       = "may-terraform"
+    Phase       = "bootstrap-hardening"
     Environment = var.environment
   }
 }

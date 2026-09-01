@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+umask 027
+
+PROJECT_DIR="/home/ec2-user/infra-monitor"
+
+REPO_URL=${jsonencode(repository_url)}
+REPO_BRANCH=${jsonencode(repository_branch)}
+
+EXPECTED_BOOTSTRAP_SHA=${jsonencode(bootstrap_sha256)}
+
+export INFRA_BOOTSTRAP_S3_BUCKET=${jsonencode(s3_bucket_name)}
+export INFRA_BOOTSTRAP_S3_KEY=${jsonencode(s3_object_key)}
+
+fail() {
+    echo "ERROR: $1" >&2
+    exit 1
+}
+
+dnf install -y \
+    git \
+    ca-certificates
+
+if [ ! -d "$PROJECT_DIR/.git" ]; then
+    rm -rf "$PROJECT_DIR"
+
+    runuser \
+        -l ec2-user \
+        -c "git clone --branch $REPO_BRANCH --single-branch $REPO_URL $PROJECT_DIR"
+else
+    runuser \
+        -l ec2-user \
+        -c "git -C $PROJECT_DIR fetch origin $REPO_BRANCH"
+
+    runuser \
+        -l ec2-user \
+        -c "git -C $PROJECT_DIR reset --hard origin/$REPO_BRANCH"
+fi
+
+ACTUAL_BOOTSTRAP_SHA="$(
+    sha256sum \
+        "$PROJECT_DIR/terraform/bootstrap.sh" \
+    | awk '{print $1}'
+)"
+
+[ "$ACTUAL_BOOTSTRAP_SHA" = "$EXPECTED_BOOTSTRAP_SHA" ] \
+    || fail "bootstrap.sh does not match the SHA256 planned by Terraform"
+
+exec bash "$PROJECT_DIR/terraform/bootstrap.sh"

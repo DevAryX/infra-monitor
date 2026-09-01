@@ -4,8 +4,8 @@ output "instance_id" {
 }
 
 output "public_ip" {
-  description = "Current public IP address of the infra-monitor EC2 instance."
-  value       = aws_instance.infra_monitor.public_ip
+  description = "Stable Elastic IP address used to reach the infra-monitor EC2 instance."
+  value       = aws_eip.infra_monitor_eip.public_ip
 }
 
 output "public_dns" {
@@ -30,7 +30,7 @@ output "deployment_host" {
 
 output "ssh_command" {
   description = "SSH command used to connect to the infra-monitor EC2 instance using the Elastic IP."
-  value       = "ssh -i ssh/infra-monitor-key.pem ec2-user@${aws_eip.infra_monitor_eip.public_ip}"
+  value       = "ssh -i ~/ssh/infra-monitor-key.pem ec2-user@${aws_eip.infra_monitor_eip.public_ip}"
 }
 
 output "ec2_iam_role_name" {
