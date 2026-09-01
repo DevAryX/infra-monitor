@@ -57,6 +57,7 @@ info "Installing required host packages"
 dnf install -y \
     git \
     docker \
+    coreutils \
     ca-certificates \
     openssl \
     firewalld
