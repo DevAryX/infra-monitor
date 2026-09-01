@@ -1,57 +1,430 @@
 # Infra Monitor
 
-This is a Linux-based system monitoring and automation project, which i built step-by-step to learn real-world infrastructure and DevOps
+`infra-monitor` is a Linux monitoring and DevOps portfolio project that evolved from a Bash system-report script into a **Terraform-managed, containerised AWS monitoring platform** with CI/CD, Prometheus, Grafana, custom application metrics, least-privilege IAM and reproducible EC2 bootstrapping.
 
-This project started as a simple Bash script and is now turning into a small cloud-integrated monitoring pipeline.
-
----
-
-## What This Project Does
-
-This is now a **mini monitoring pipeline**.
-
-### Features
-
-* 📊 System health reporting for CPU, memory, disk, processes, and network
-* 🕒 Automated execution using cron
-* 📝 Structured logging to local log files
-* ☁️ Optional AWS S3 log upload using environment variables
-* ⚠️ Error handling for failed cloud uploads
-* 🔄 Log rotation to prevent logs growing forever
-* 🧠 Dynamic paths so the project is portable across systems
-* 🚀 CI/CD deployment using GitHub Actions
-* 🔐 GitHub Secrets for deployment credentials
-* 📦 Automated Docker build and Compose validation
+The project was built incrementally to learn how the different parts of a real infrastructure workflow fit together rather than treating Bash, AWS, Terraform, Docker, CI/CD and monitoring as disconnected exercises.
 
 ---
 
-## Architecture Overview
+## What the Project Does
 
-This project now runs as a containerised monitoring service on AWS EC2.
+The current project includes:
 
-The infrastructure is created with Terraform, the monitoring application is packaged with Docker, and Docker Compose is used to run the container on the EC2 instance.
+* Linux system health reporting for CPU, memory, disk, processes and network interfaces
+* Structured local logging and configurable log rotation
+* Optional S3 report uploads
+* Host-aware monitoring from a hardened Docker container
+* Docker Compose orchestration
+* Terraform-managed AWS EC2 infrastructure
+* A stable Elastic IP
+* Restricted AWS Security Group ingress
+* Host-level `firewalld`
+* Encrypted gp3 root storage
+* IMDSv2-only instance metadata access
+* A least-privilege EC2 IAM role and instance profile
+* Node Exporter host metrics
+* Prometheus metric collection and PromQL
+* Grafana dashboards provisioned from Git
+* Custom `infra_monitor_*` Prometheus metrics from the Bash application
+* Persistent Prometheus and Grafana Docker volumes
+* Secure Grafana and Prometheus access through SSH tunnelling
+* GitHub Actions CI/CD
+* Monitoring integration tests
+* Post-deployment health checks
+* Failure, recovery and EC2 reboot testing
+* Deterministic, SHA-verified EC2 bootstrap automation
 
-Current architecture:
+---
+
+# Final Architecture
 
 ```text
-Terraform
+Windows 11
+    │
     ↓
-AWS EC2 + Elastic IP
-    ↓
-Docker
-    ↓
+Ubuntu 22.04 VM
+    │
+    ├─────────────────────────────────────────────┐
+    │                                             │
+    ↓                                             ↓
+Terraform                                   Git / SSH
+    │                                             │
+    ↓                                             │
+AWS                                            GitHub
+    │                                             │
+    ├── Default VPC                              ↓
+    ├── Security Group                    GitHub Actions
+    ├── Elastic IP                               │
+    ├── IAM Role / Instance Profile              ├── Bash checks
+    ├── Encrypted gp3 EBS                        ├── Docker build
+    └── EC2                                      ├── Config validation
+         │                                       ├── Integration tests
+         │                                       └── EC2 deployment
+         ↓                                             │
+SHA-verified user data                                ↓
+         │                                      SSH deployment
+         ↓                                             │
+bootstrap.sh  ←────────────────────────────────────────┘
+         │
+         ├── firewalld
+         ├── Docker
+         ├── runtime configuration
+         ├── Grafana credentials
+         └── health validation
+         │
+         ↓
 Docker Compose
-    ↓
-GitHub Actions CI/CD
-    ↓
+    │
+    ├── infra-monitor
+    │    ├── Bash host health report
+    │    ├── persistent logs
+    │    ├── optional S3 upload
+    │    └── custom infra_monitor_* metrics
+    │
+    ├── node-exporter
+    │    ├── Linux host metrics
+    │    └── textfile collector
+    │
+    ├── Prometheus
+    │    ├── metric scraping
+    │    ├── PromQL
+    │    └── persistent time-series storage
+    │
+    └── Grafana
+         ├── provisioned Prometheus data source
+         └── provisioned EC2 dashboard
+```
+
+AWS access for the workload follows a separate least-privilege path:
+
+```text
 infra-monitor container
-    ↓
-Persistent logs
+        ↓
+EC2 Instance Metadata Service
+        ↓
+IAM Instance Profile
+        ↓
+infra-monitor-ec2-role
+        ↓
+s3:PutObject
+        ↓
+configured system-report object only
+```
+
+No long-lived AWS workload credentials need to be stored on EC2.
+
+---
+
+# Main Components
+
+| Component                    | Responsibility                                                    |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `system_report.sh`           | Generates host health reports, logs and custom Prometheus metrics |
+| Docker                       | Packages the Bash application and its runtime dependencies        |
+| Docker Compose               | Runs the application and monitoring stack                         |
+| Node Exporter                | Exposes Linux host metrics and custom textfile metrics            |
+| Prometheus                   | Scrapes, stores and queries time-series metrics                   |
+| Grafana                      | Visualises system and application health                          |
+| Terraform                    | Defines and rebuilds the AWS infrastructure                       |
+| IAM                          | Gives the EC2 workload limited S3 access without stored AWS keys  |
+| GitHub Actions               | Validates, tests and deploys changes                              |
+| `bootstrap.sh`               | Configures a newly created EC2 instance automatically             |
+| `monitoring_health_check.sh` | Verifies the deployed monitoring stack end-to-end                 |
+
+---
+
+# The Infra Monitor Application
+
+The original project is still at the centre of the stack.
+
+`scripts/system_report.sh` reports:
+
+```text
+CPU information
+uptime and load
+memory usage
+host root-disk usage
+top memory-consuming processes
+host network interfaces
+threshold status
+```
+
+The application runs as a **one-shot container workload**.
+
+A successful run finishes with exit code `0`, so seeing:
+
+```text
+infra-monitor-compose    Exited (0)
+```
+
+is expected.
+
+The other monitoring services remain running continuously.
+
+The container intentionally observes the Linux host using host UTS, PID and network namespaces plus a read-only host-root mount.
+
+At the same time, the container is restricted using:
+
+```text
+read-only container root filesystem
+no-new-privileges
+all Linux capabilities dropped
+read-only host-root mount
+```
+
+It does not run with `privileged: true`.
+
+---
+
+# Monitoring Stack
+
+The main monitoring flow is:
+
+```text
+Linux EC2 host
+      ↓
+Node Exporter
+      ↓
+Prometheus
+      ↓
+Grafana
+```
+
+The Bash application also feeds its own state into the same system:
+
+```text
+system_report.sh
+      ↓
+infra_monitor.prom
+      ↓
+Node Exporter textfile collector
+      ↓
+Prometheus
+      ↓
+Grafana
+```
+
+Custom metrics include:
+
+```text
+infra_monitor_last_run_timestamp_seconds
+infra_monitor_last_success_timestamp_seconds
+infra_monitor_cpu_warning
+infra_monitor_memory_warning
+infra_monitor_disk_warning
+infra_monitor_overall_warning
+infra_monitor_report_success
 ```
 
 ---
 
-## How to Run Locally
+# Grafana Dashboard
+
+The main provisioned dashboard is:
+
+**Infra Monitor — EC2 Overview**
+
+It currently contains 11 panels covering:
+
+* CPU utilisation
+* Memory utilisation
+* Root disk usage
+* Available memory
+* Network receive traffic
+* Network transmit traffic
+* System uptime
+* Prometheus target status
+* Time since the last successful report
+* Infra Monitor warning state
+* Infra Monitor report status
+
+![Infra Monitor EC2 Grafana Dashboard](proof/aug_imgs/day16-final-ec2-dashboard.png)
+
+The dashboard and Prometheus data source are stored as version-controlled provisioning files, so the important Grafana configuration can be reconstructed on a fresh server rather than depending only on an existing Grafana database.
+
+---
+
+# Security Model
+
+## Network Access
+
+Permanent public monitoring ingress is not required.
+
+The Terraform-managed Security Group restricts SSH to the configured trusted `/32` CIDR.
+
+The EC2 host also runs `firewalld`.
+
+Public monitoring access remains blocked for:
+
+```text
+3000 — Grafana
+9090 — Prometheus
+9100 — Node Exporter
+```
+
+Grafana and Prometheus are accessed through authenticated SSH local port forwarding instead.
+
+## EC2 Hardening
+
+Terraform explicitly configures:
+
+```text
+IMDSv2 required
+metadata hop limit = 2
+encrypted gp3 root EBS
+IAM instance profile
+stable Elastic IP
+user-data replacement when bootstrap changes
+```
+
+## Secrets and Runtime Configuration
+
+Safe example configuration is tracked:
+
+```text
+docker/runtime.env.example
+```
+
+Real runtime configuration is ignored:
+
+```text
+docker/runtime.env
+```
+
+Grafana credentials live outside the repository:
+
+```text
+~/.config/infra-monitor/grafana.env
+```
+
+The EC2 private key also remains outside the repository:
+
+```text
+~/ssh/infra-monitor-key.pem
+```
+
+Terraform state, real `.tfvars`, runtime `.env` files, private keys and logs are ignored by Git.
+
+---
+
+# IAM Least Privilege
+
+The EC2 workload uses a Terraform-managed IAM role rather than stored AWS access keys.
+
+The application's current AWS requirement is deliberately narrow:
+
+```text
+Action:
+s3:PutObject
+
+Resource:
+configured system-report object
+```
+
+Testing confirmed that the workload can upload the intended report while unrelated operations such as bucket listing, uploading to another key and calling EC2 APIs are denied.
+
+---
+
+# CI/CD Pipeline
+
+The GitHub Actions pipeline is triggered by pushes to `main` and can also be run manually.
+
+```text
+Bash Syntax Checks
+        ↓
+Docker Build Check
+        ↓
+Docker Compose / Prometheus / Grafana Validation
+        ↓
+Monitoring Integration Checks
+        ↓
+Deploy To EC2
+        ↓
+Post-Deployment Health Checks
+```
+
+CI verifies:
+
+```text
+Bash syntax
+required container commands
+Docker image build
+Docker Compose configuration
+host-aware report behaviour
+Prometheus configuration
+Grafana dashboard JSON and expected panels
+full monitoring integration
+custom Prometheus metrics
+```
+
+For deployment, GitHub Actions temporarily authorises the current runner's public `/32` on SSH port `22`.
+
+The EC2 deployment checkout is synchronised using:
+
+```bash
+git fetch origin main
+git reset --hard origin/main
+```
+
+and the canonical repository script is executed:
+
+```bash
+bash scripts/deploy-infra-monitor.sh
+```
+
+The temporary runner SSH rule is removed afterwards.
+
+A deployment is only considered successful when the post-deployment monitoring health checks pass.
+
+---
+
+# EC2 Bootstrap
+
+A fresh EC2 instance does not require manual application preparation.
+
+Terraform renders a small user-data launcher that:
+
+```text
+clones the repository
+        ↓
+verifies bootstrap.sh SHA256
+        ↓
+executes bootstrap.sh
+```
+
+The hardened bootstrap then:
+
+```text
+installs host dependencies
+        ↓
+configures firewalld
+        ↓
+installs pinned Docker tooling
+        ↓
+creates runtime configuration
+        ↓
+generates Grafana credentials
+        ↓
+deploys Docker Compose
+        ↓
+checks IAM access
+        ↓
+runs monitoring health checks
+```
+
+The bootstrap was tested by replacing the existing EC2 instance through Terraform.
+
+The EC2 instance ID changed while the Elastic IP remained stable, and the replacement server reconstructed the stack automatically.
+
+The bootstrap was also rerun to test idempotency and the new EC2 instance was rebooted to verify recovery.
+
+---
+
+# Running Locally
+
+The intended local development environment is Linux.
+
+This project was developed from an Ubuntu 22.04 VM.
 
 Clone the repository:
 
@@ -60,327 +433,320 @@ git clone https://github.com/DevAryX/infra-monitor.git
 cd infra-monitor
 ```
 
-Make scripts executable:
+Create the local runtime configuration:
 
 ```bash
-chmod +x scripts/*.sh
+cp docker/runtime.env.example docker/runtime.env
+chmod 600 docker/runtime.env
 ```
 
-Create a local environment file from the example:
+Create local Grafana credentials:
 
 ```bash
-cp .env.example ~/.infra-monitor.env
-source ~/.infra-monitor.env
+mkdir -p ~/.config/infra-monitor
+chmod 700 ~/.config/infra-monitor
+
+{
+  echo 'GF_SECURITY_ADMIN_USER=admin'
+  printf 'GF_SECURITY_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+} > ~/.config/infra-monitor/grafana.env
+
+chmod 600 ~/.config/infra-monitor/grafana.env
 ```
 
-Run the monitoring script manually:
+Build and start the stack:
 
 ```bash
-./scripts/system_report.sh
+docker compose \
+  -f docker/docker-compose.yml \
+  up -d --build
 ```
 
----
+Check all services:
 
-## Infrastructure Overview
+```bash
+docker compose \
+  -f docker/docker-compose.yml \
+  ps -a
+```
 
-This project currently runs on an AWS EC2 instance using Amazon Linux 2023.
+Run the reusable health checker:
 
-The instance is deployed inside an AWS VPC and public subnet, with internet access provided through an Internet Gateway. SSH access is controlled using AWS Security Groups.
+```bash
+bash scripts/monitoring_health_check.sh
+```
 
-Current architecture:
+Local interfaces:
 
 ```text
-Ubuntu VM → Internet → AWS VPC → Public Subnet → EC2 Instance
+Grafana:    http://localhost:3000
+Prometheus: http://localhost:9090
+Node Exporter metrics: http://localhost:9100/metrics
 ```
 
-A basic architecture diagram is available in:
+---
+
+# Secure Access to EC2 Monitoring
+
+The EC2 monitoring interfaces are not opened publicly.
+
+Get the stable deployment host:
+
+```bash
+EC2_HOST="$(
+  cd terraform \
+  && terraform output -raw deployment_host
+)"
+```
+
+Create an SSH tunnel from the Ubuntu VM:
+
+```bash
+ssh \
+  -i ~/ssh/infra-monitor-key.pem \
+  -N \
+  -T \
+  -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:13000:127.0.0.1:3000 \
+  -L 127.0.0.1:19090:127.0.0.1:9090 \
+  ec2-user@"$EC2_HOST"
+```
+
+Then access:
 
 ```text
-docs/architecture_diagram.png
+EC2 Grafana:    http://localhost:13000
+EC2 Prometheus: http://localhost:19090
 ```
 
----
-
-## March 2026 Milestone
-
-This phase focused on building a **production-style monitoring system**.
-
-Main improvements:
-
-* Automated monitoring using cron
-* Persistent structured logging
-* AWS S3 integration
-* Basic failure handling
-* Log rotation
-* Resource safety
+The different local ports allow the Ubuntu VM's own monitoring stack to continue using `3000` and `9090`.
 
 ---
 
-## April 2026 Infrastructure Improvements
+# Terraform
 
-April focused on making the project more realistic from a cloud and operations point of view.
+Terraform runs from the Ubuntu control VM.
 
-Main improvements:
+Create local configuration from:
 
-* Documented public vs private IPs
-* Mapped the EC2 network path through VPC, subnet, route table, and Internet Gateway
-* Restricted SSH access with Security Groups
-* Added Linux firewall protection using `firewalld`
-* Documented ports `22`, `80`, and `443`
-* Reviewed AWS billing and cost risks
-* Added environment-variable based configuration
-* Improved logging format
-* Added configurable log rotation
-* Tested EC2 stop/start behaviour
-* Checked cron after restart
-* Split cron output and error logs
-* Performed basic failure testing and recovery
-* Consolidated networking notes
+```text
+terraform/terraform.tfvars.example
+```
 
----
-
-## May 2026 — Terraform Infrastructure as Code
-
-May focused on moving the AWS setup from manual cloud setup to Terraform-based Infrastructure as Code.
-
-Main improvements:
-
-* Added a dedicated `terraform/` folder
-* Created AWS infrastructure using Terraform instead of manual AWS Console setup
-* Added an EC2 instance resource
-* Added a Terraform-managed Security Group
-* Restricted SSH access using a specific public IP `/32`
-* Added outbound internet access for the instance
-* Added variables for region, project name, environment, instance type, SSH CIDR, and key name
-* Added safe example values using `terraform.tfvars.example`
-* Added Terraform outputs for public IP, public DNS, instance ID, Security Group ID, and SSH command
-* Tested SSH access using Terraform output values
-* Destroyed and rebuilt the infrastructure using Terraform
-* Proved the AWS setup is reproducible from code
-
-This phase moved the project from manually created cloud infrastructure to a setup that can be created, destroyed, and rebuilt properly from Terraform files.
-
----
-
-## June 2026 — Docker Containerisation
-
-June focused on making the monitoring app portable using Docker.
-
-Main improvements:
-
-  * Added a dedicated `docker/` folder
-  * Created a Dockerfile for the monitoring script
-  * Built a custom `infra-monitor` Docker image
-  * Ran the monitoring script inside a Docker container
-  * Added persistent logs using Docker volume mounts
-  * Added environment-variable based container configuration
-  * Created a Docker Compose YAML file
-  * Deployed the containerised monitoring service on AWS EC2
-  * Documented the Docker setup in `docker/README.md`
-
-This phase moved the project from a Bash script running directly on a server to a containerised monitoring service that can be run through Docker Compose.
-
----
-
-## July 2026 — CI/CD with GitHub Actions
-
-July focused on adding CI/CD so the project could move from manual deployment to automated deployment.
-
-Main improvements:
-
-* Added a GitHub Actions workflow in `.github/workflows/test.yml`
-* Triggered the workflow on pushes to `main`
-* Added manual workflow runs using `workflow_dispatch`
-* Added Bash syntax checks for project scripts
-* Added a Docker image build check
-* Added Docker Compose validation
-* Added GitHub Secrets for EC2 deployment values
-* Used the EC2 Elastic IP as the stable deployment host
-* Tested SSH from GitHub Actions into EC2
-* Temporarily allowed the GitHub Actions runner IP through the Security Group during deployment
-* Created an EC2 deployment script at `~/deploy-infra-monitor.sh`
-* Added a repo copy of the deploy script at `scripts/deploy-infra-monitor.sh`
-* Added safety checks to the deploy script
-* Added timestamped deployment logs at `~/infra-monitor/logs/deploy.log`
-* Triggered the EC2 deployment script from GitHub Actions
-
-This phase moved the project from a containerised monitoring service to a CI/CD-enabled cloud service that can be checked, rebuilt, and redeployed through GitHub Actions.
-
----
-
-## August 2026 — Monitoring & Security
-
-August focused on adding observability and security improvements to the existing cloud setup.
-
-Main improvements:
-
-* Added a dedicated `monitoring/` folder
-* Added Node Exporter for Linux host metrics
-* Added Prometheus for metric scraping and time-series storage
-* Added Grafana for dashboards and visualisation
-* Built the `Infra Monitor — EC2 Overview` dashboard
-* Added PromQL queries for CPU, memory, disk, network, uptime, and target health
-* Added persistent Docker volumes for Prometheus and Grafana data
-* Tested monitoring persistence after container recreation
-* Provisioned the Grafana data source and dashboard from Git-tracked files
-* Deployed the full monitoring stack to the Terraform-managed EC2 instance
-* Accessed Grafana and Prometheus securely using SSH tunnels
-* Confirmed monitoring ports were not exposed publicly
-* Cleaned up runtime environment files and secret handling
-* Added a Terraform-managed IAM role and least-privilege S3 upload policy
-* Added custom `infra_monitor_*` Prometheus metrics from the Bash monitoring script
-* Added CI/CD monitoring validation and post-deployment health checks
-* Tested failure, recovery, EC2 reboot behaviour, and final monitoring health
-
-This phase moved the project from a CI/CD-enabled cloud service to a monitored and security-aware cloud system using Prometheus, Node Exporter, Grafana, SSH-based access, custom Bash metrics, and least-privilege IAM permissions.
-
----
-
-## Cron Setup
-
-Edit your crontab:
+Typical workflow:
 
 ```bash
-crontab -e
+cd terraform
+
+terraform init
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
 ```
 
-Example cron job:
+Terraform manages the EC2 instance, Security Group rules, Elastic IP, IAM resources, encrypted root storage and bootstrap configuration.
 
-```cron
-*/5 * * * * /home/ec2-user/infra-monitor/scripts/system_report.sh >> /home/ec2-user/infra-monitor/logs/cron_stdout.log 2>> /home/ec2-user/infra-monitor/logs/cron_stderr.log
-```
-
-This runs the monitoring script every 5 minutes and separates normal cron output from cron errors.
+See [`terraform/README.md`](terraform/README.md) for the infrastructure-specific documentation.
 
 ---
 
-## AWS S3 Integration
-
-S3 upload is optional.
-
-If `INFRA_MONITOR_S3_BUCKET` is not set, the script skips the upload cleanly.
-
-Requirements:
-
-* AWS CLI installed
-* EC2 instance with an IAM role attached
-* S3 permissions configured correctly
-
-Manual test:
-
-```bash
-aws s3 cp logs/system_report.log s3://your-bucket-name/system_report.log
-```
-
----
-
-## Project Structure
+# Project Structure
 
 ```text
 infra-monitor/
-├── scripts/
-│   ├── deploy-infra-monitor.sh
-│   ├── resource_check.sh
-│   └── system_report.sh
+├── .github/
+│   └── workflows/
+│       └── test.yml
+│
+├── docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── runtime.env.example
+│   └── README.md
+│
 ├── docs/
 │   ├── APR-cloud-docs.md
-│   ├── MAY-terraform-docs.md
-│   ├── JUN-docker-docs.md
-│   ├── JUL-cicd-docs.md
-│   ├── yaml-notes.md
+│   ├── MAY-terraform-notes.md
+│   ├── JUN-docker-notes.md
+│   ├── JUL-cicd-notes.md
+│   ├── AUG-monitoring-security-docs.md
+│   ├── aug-bootstrap-hardening.md
 │   ├── architecture_diagram.png
+│   ├── bootstrap-notes.md
 │   ├── cloud-notes.md
 │   ├── cost-notes.md
 │   ├── ec2-startup-notes.md
 │   ├── git-notes.md
 │   ├── log-notes.md
-│   └── networking-notes.md
+│   ├── networking-notes.md
+│   └── yaml-notes.md
+│
+├── monitoring/
+│   ├── grafana/
+│   │   ├── dashboards/
+│   │   │   └── infra-overview.json
+│   │   ├── provisioning/
+│   │   │   ├── dashboards/
+│   │   │   │   └── dashboards.yml
+│   │   │   └── datasources/
+│   │   │       └── prometheus.yml
+│   │   └── dashboard-notes.md
+│   │
+│   ├── prometheus/
+│   │   ├── prometheus.yml
+│   │   └── promql-basics.md
+│   │
+│   ├── ec2-deployment-test.md
+│   ├── iam-least-privilege.md
+│   ├── persistence-test.md
+│   └── README.md
+│
 ├── proof/
 │   ├── feb_imgs/
 │   ├── mar_imgs/
 │   ├── apr_imgs/
 │   ├── may_imgs/
 │   ├── jun_imgs/
-│   └── jul_imgs/
+│   ├── jul_imgs/
+│   └── aug_imgs/
+│
+├── scripts/
+│   ├── deploy-infra-monitor.sh
+│   ├── monitoring_health_check.sh
+│   ├── resource_check.sh
+│   └── system_report.sh
+│
 ├── terraform/
+│   ├── .terraform.lock.hcl
+│   ├── bootstrap.sh
+│   ├── iam.tf
 │   ├── main.tf
-│   ├── variables.tf
 │   ├── outputs.tf
 │   ├── terraform.tfvars.example
+│   ├── user_data.sh.tftpl
+│   ├── variables.tf
 │   └── README.md
-├── docker/
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── README.md
-├── logs/                 # generated locally, ignored by Git
-├── .github/
-│   └── workflows/
-│       └── test.yml
-├── .env.example
+│
+├── logs/                         # generated locally, ignored by Git
+├── .dockerignore
+├── .env.example                 # earlier/direct-script configuration example
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## What I’ve Learned
+# Failure and Recovery Testing
 
-* Writing production-style Bash scripts
-* Handling failures with safer script logic
-* Building structured logging systems
-* Using cron for automation
-* Uploading logs to AWS S3
-* Debugging real-world issues with paths, permissions, and cron environments
-* Making scripts portable using environment variables
-* Understanding cloud networking and EC2 security basics
-* Building Docker images with Dockerfiles
-* Running Bash scripts inside containers
-* Using bind mounts for persistent container logs
-* Passing runtime configuration through environment variables
-* Running containers with Docker Compose
-* Deploying a Docker Compose workload on AWS EC2
-* Creating GitHub Actions workflows
-* Running CI checks for Bash scripts
-* Building Docker images in CI
-* Validating Docker Compose in CI
-* Using GitHub Secrets safely
-* Deploying to EC2 through GitHub Actions
-* Adding deployment safety checks and logs
+The project was tested beyond the normal healthy state.
 
----
+Testing included:
 
-## Roadmap
+```text
+Node Exporter failure
+Prometheus detecting target DOWN
+Node Exporter recovery
+Grafana container recreation
+Grafana provisioning recovery
+Prometheus container recreation
+Prometheus volume persistence
+EC2 reboot
+fresh EC2 replacement
+bootstrap idempotency
+firewall persistence
+IAM role access
+S3 upload
+public-port blocking
+CI/CD deployment health
+```
 
-Completed phases:
-
-- February 2026 — Git and GitHub foundations
-- March 2026 — AWS EC2 monitoring pipeline
-- April 2026 — Cloud polish, networking, logging, and cost awareness
-- May 2026 — Terraform Infrastructure as Code
-- June 2026 — Docker containerisation
-- July 2026 — GitHub Actions CI/CD
-- August 2026 — Prometheus, Grafana, and security improvements
-
-Upcoming improvements:
-
-- September 2026 — final portfolio polish
+This was important because infrastructure is more convincing when failures are deliberately introduced and recovery can be explained.
 
 ---
 
-## Notes
+# Project Evolution
 
-* Logs are intentionally excluded from Git using `.gitignore`
-* Real environment files are not committed
-* `.env.example` shows the expected config structure
-* This project is designed to be portable and reproducible
-* Built and tested on AWS EC2 using Amazon Linux 2023
+| Phase          | Main Focus                                            |
+| -------------- | ----------------------------------------------------- |
+| February 2026  | Git, GitHub and Bash foundations                      |
+| March 2026     | EC2, cron, logging and S3                             |
+| April 2026     | Networking, security, logging and cost awareness      |
+| May 2026       | Terraform Infrastructure as Code                      |
+| June 2026      | Docker and Docker Compose                             |
+| July 2026      | GitHub Actions CI/CD                                  |
+| August 2026    | Prometheus, Grafana, custom metrics, IAM and security |
+| Post-August    | EC2 bootstrap and runtime hardening                   |
+| September 2026 | Final documentation and portfolio polish              |
+
+The core project is now complete.
+
+---
+
+# What I Learned
+
+This project gave me practical experience with:
+
+* Linux and Bash scripting
+* Failure handling and structured logging
+* AWS EC2, S3, IAM and VPC networking
+* Security Groups and host firewalls
+* Terraform and infrastructure lifecycle management
+* Docker images and Docker Compose
+* Host-aware container monitoring
+* Git and deployment checkout management
+* GitHub Actions CI/CD
+* Prometheus metrics and PromQL
+* Node Exporter and the textfile collector
+* Grafana dashboards and provisioning
+* IAM roles and least-privilege policies
+* Runtime secret/configuration separation
+* Health checks and deployment gates
+* Failure and recovery testing
+* Idempotent bootstrap design
+* Reproducible/disposable infrastructure
+
+---
+
+# Documentation
+
+More detailed learning notes and verification are stored throughout the repository.
+
+Useful starting points:
+
+* [`docs/AUG-monitoring-security-docs.md`](docs/AUG-monitoring-security-docs.md)
+* [`docs/aug-bootstrap-hardening.md`](docs/aug-bootstrap-hardening.md)
+* [`monitoring/README.md`](monitoring/README.md)
+* [`monitoring/ec2-deployment-test.md`](monitoring/ec2-deployment-test.md)
+* [`monitoring/iam-least-privilege.md`](monitoring/iam-least-privilege.md)
+* [`monitoring/persistence-test.md`](monitoring/persistence-test.md)
+* [`monitoring/prometheus/promql-basics.md`](monitoring/prometheus/promql-basics.md)
+* [`monitoring/grafana/dashboard-notes.md`](monitoring/grafana/dashboard-notes.md)
+* [`docker/README.md`](docker/README.md)
+* [`terraform/README.md`](terraform/README.md)
+
+Proof screenshots from each phase are stored under:
+
+```text
+proof/
+```
+
+---
+
+# Project Status
+
+**Core project complete — September 2026.**
+
+The original goal was to take a simple Linux monitoring script and progressively build real infrastructure, deployment, observability and security around it.
+
+And Alhumdulillah That goal has been completed.
+
+Future changes, if any, are optional extensions rather than missing core functionality.
+
+Possible future areas could include remote Terraform state, AWS OIDC for GitHub Actions, Alertmanager, centralised logs or a larger orchestration platform, but none are required for the current project to be considered complete.
 
 ---
 
 ## Author
 
 GitHub: https://github.com/DevAryX
-
----
-
-More features coming soon as the system evolves, inshallah.
