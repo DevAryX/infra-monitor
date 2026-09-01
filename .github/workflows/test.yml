@@ -93,7 +93,7 @@ jobs:
           INFRA_MONITOR_ERROR_LOG=/app/logs/ci-error.log
 
           INFRA_MONITOR_METRICS_DIR=/app/metrics
-	  INFRA_MONITOR_HOST_ROOT=/host
+          INFRA_MONITOR_HOST_ROOT=/host
 
           INFRA_MONITOR_S3_BUCKET=
           INFRA_MONITOR_S3_KEY=system_report.log
