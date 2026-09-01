@@ -238,6 +238,28 @@ fi
 info "Repository commit: $(git -C "$PROJECT_DIR" rev-parse --short HEAD)"
 
 # ------------------------------------------------------------------
+# Container-readable monitoring configuration
+# ------------------------------------------------------------------
+
+info "Preparing container-readable monitoring configuration"
+
+find "$PROJECT_DIR/monitoring/prometheus" \
+    -type d \
+    -exec chmod 0755 {} +
+
+find "$PROJECT_DIR/monitoring/prometheus" \
+    -type f \
+    -exec chmod 0644 {} +
+
+find "$PROJECT_DIR/monitoring/grafana" \
+    -type d \
+    -exec chmod 0755 {} +
+
+find "$PROJECT_DIR/monitoring/grafana" \
+    -type f \
+    -exec chmod 0644 {} +
+
+# ------------------------------------------------------------------
 # Runtime files
 # ------------------------------------------------------------------
 
@@ -245,8 +267,8 @@ info "Preparing log directory"
 
 install -d \
     -m 0755 \
-    -o ec2-user \
-    -g ec2-user \
+    -o root \
+    -g root \
     "$PROJECT_DIR/logs"
 
 info "Preparing runtime environment"
