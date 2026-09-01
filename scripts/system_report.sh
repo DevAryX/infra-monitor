@@ -28,6 +28,7 @@ S3_KEY="${INFRA_MONITOR_S3_KEY:-system_report.log}"
 
 METRICS_DIR="${INFRA_MONITOR_METRICS_DIR:-/app/metrics}"
 METRICS_FILE="$METRICS_DIR/infra_monitor.prom"
+HOST_ROOT="${INFRA_MONITOR_HOST_ROOT:-/host}"
 
 CPU_WARNING=0
 MEMORY_WARNING=0
@@ -130,6 +131,61 @@ publish_metrics_on_exit() {
 
 trap publish_metrics_on_exit EXIT
 
+required_commands=(
+    awk
+    date
+    df
+    free
+    grep
+    hostname
+    ip
+    lscpu
+    nproc
+    ps
+    sed
+    stat
+    top
+    tr
+    uptime
+)
+
+for command_name in "${required_commands[@]}"; do
+    command -v "$command_name" >/dev/null 2>&1 \
+        || {
+            echo "ERROR: required command not found: $command_name" >&2
+            exit 1
+        }
+done
+
+if [ ! -d "$HOST_ROOT" ]; then
+    echo "ERROR: host root is not mounted at: $HOST_ROOT" >&2
+    exit 1
+fi
+
+if [ -n "$S3_BUCKET" ]; then
+    command -v aws >/dev/null 2>&1 \
+        || {
+            echo "ERROR: AWS CLI is required when S3 upload is enabled" >&2
+            exit 1
+        }
+fi
+
+get_host_os() {
+    if [ -r "$HOST_ROOT/etc/os-release" ]; then
+        awk -F= '
+            $1 == "PRETTY_NAME" {
+                value = substr($0, index($0, "=") + 1)
+                gsub(/^"|"$/, "", value)
+                print value
+                exit
+            }
+        ' "$HOST_ROOT/etc/os-release"
+    else
+        echo "Unknown"
+    fi
+}
+
+HOST_OS="$(get_host_os)"
 
 timestamp() {
     date "+%Y-%m-%d %H:%M:%S %Z"
@@ -218,11 +274,11 @@ status_message() {
 echo -e "${CYAN}${BOLD}SYSTEM HEALTH REPORT${RESET}"
 echo "Date: $(date)"
 echo "Hostname: $HOSTNAME"
-echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -o)"
+echo "OS: $HOST_OS"
 echo
 
 log_report_header
-echo "OS: $(lsb_release -d 2>/dev/null | cut -f2 || uname -o)" >> "$LOG_FILE"
+echo "OS: $HOST_OS" >> "$LOG_FILE"
 
 # ----------------------------
 # CPU Info
@@ -252,16 +308,30 @@ print_section "Memory Usage"
 free -h
 free -h >> "$LOG_FILE"
 USED_MEM=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
-status_message "$USED_MEM" "$MEMORY_THRESHOLD" "Memory"
+status_message \
+	"$USED_MEM" \
+	"$MEMORY_THRESHOLD" \
+	"Memory"
 
 # ----------------------------
 # Disk
 # ----------------------------
-print_section "Disk Usage (/)"
-df -h /
-df -h / >> "$LOG_FILE"
-USED_DISK=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
-status_message "$USED_DISK" "$DISK_THRESHOLD" "Disk"
+print_section "Disk Usage (Host Root)"
+
+df -h "$HOST_ROOT"
+df -h "$HOST_ROOT" >> "$LOG_FILE"
+
+USED_DISK="$(
+    df -P "$HOST_ROOT" \
+        | awk 'NR==2 {
+            gsub("%", "", $5)
+            print $5
+        }'
+)"
+status_message \
+	"$USED_DISK" \
+	"$DISK_THRESHOLD" \
+	"Disk"
 
 # ----------------------------
 # Top Processes

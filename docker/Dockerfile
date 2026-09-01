@@ -12,9 +12,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sed \
     gawk \
     bc \
+    iproute2 \
     ca-certificates \
     awscli \
     && rm -rf /var/lib/apt/lists/*
+
+RUN command -v ip >/dev/null \
+    && command -v aws >/dev/null \
+    && command -v ps >/dev/null \
+    && command -v top >/dev/null \
+    && command -v df >/dev/null
 
 COPY scripts/system_report.sh ./scripts/system_report.sh
 

@@ -71,8 +71,24 @@ docker --version
 docker buildx version || true
 docker compose version
 
-info "Pulling latest code from main..."
-git pull origin main
+info "Refreshing origin/main reference..."
+git fetch --quiet origin main
+
+info "Verifying deployment checkout..."
+
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  fail "Tracked files contain local changes; deployment checkout must be clean"
+fi
+
+CURRENT_COMMIT="$(git rev-parse HEAD)"
+ORIGIN_COMMIT="$(git rev-parse origin/main)"
+
+if [ "$CURRENT_COMMIT" != "$ORIGIN_COMMIT" ]; then
+  fail "Deployment checkout is not synchronised with origin/main"
+fi
+
+info "Deployment checkout is clean"
+info "Deploying commit: $(git rev-parse --short HEAD)"
 
 [ -f "$HEALTH_CHECK_SCRIPT" ] \
   || fail "Monitoring health-check script not found: $HEALTH_CHECK_SCRIPT"

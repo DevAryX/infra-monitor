@@ -46,6 +46,26 @@ jobs:
       - name: Build Docker image
         run: docker build -f docker/Dockerfile -t infra-monitor .
 
+      - name: Verify container runtime dependencies
+        run: |
+          docker run \
+            --rm \
+            --entrypoint sh \
+            infra-monitor \
+            -c '
+              set -eu
+
+              command -v ip
+              command -v aws
+              command -v ps
+              command -v top
+              command -v df
+
+              ip -brief addr show >/dev/null
+
+              echo "Infra Monitor runtime dependencies verified"
+            '
+
       - name: Confirm Docker build passed
         run: echo "Docker image built successfully"
         
@@ -68,8 +88,13 @@ jobs:
           INFRA_MONITOR_MEMORY_THRESHOLD=70
           INFRA_MONITOR_DISK_THRESHOLD=70
           INFRA_MONITOR_MAX_LOG_SIZE=50000
+
           INFRA_MONITOR_SYSTEM_LOG=/app/logs/ci-system-report.log
           INFRA_MONITOR_ERROR_LOG=/app/logs/ci-error.log
+
+          INFRA_MONITOR_METRICS_DIR=/app/metrics
+	  INFRA_MONITOR_HOST_ROOT=/host
+
           INFRA_MONITOR_S3_BUCKET=
           INFRA_MONITOR_S3_KEY=system_report.log
           EOF
@@ -109,6 +134,18 @@ jobs:
           grep -Fq \
             "Thresholds: CPU=70% Memory=70% Disk=70%" \
             logs/ci-system-report.log
+
+          RUNNER_HOSTNAME="$(hostname)"
+
+          grep -Fq \
+            "Hostname: $RUNNER_HOSTNAME" \
+            logs/ci-system-report.log
+
+          grep -Fq \
+            "Disk Usage (Host Root)" \
+            logs/ci-system-report.log
+
+          echo "Host-aware monitoring verified successfully"
 
           echo "Runtime environment variables verified successfully"
 
@@ -338,9 +375,19 @@ jobs:
 
       - name: Run deployment script on EC2
         run: |
-          ssh -i ~/.ssh/infra-monitor-key.pem \
+          ssh \
+            -i ~/.ssh/infra-monitor-key.pem \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
-            "bash ~/deploy-infra-monitor.sh"
+            '
+              set -euo pipefail
+
+              cd "$HOME/infra-monitor"
+
+              git fetch origin main
+              git reset --hard origin/main
+
+              bash scripts/deploy-infra-monitor.sh
+            '
 
       - name: Remove temporary SSH access
         if: always()
