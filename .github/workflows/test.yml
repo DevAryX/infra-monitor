@@ -119,7 +119,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          mkdir -p logs
+          sudo mkdir -p logs
+          sudo chown root:root logs
+          sudo chmod 755 logs
 
           docker compose \
             -f docker/docker-compose.yml \
@@ -252,6 +254,12 @@ jobs:
           EOF
 
           chmod 600 docker/runtime.env
+
+      - name: Prepare CI log directory
+        run: |
+          sudo mkdir -p logs
+          sudo chown root:root logs
+          sudo chmod 755 logs
 
       - name: Create CI Grafana environment
         run: |
