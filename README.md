@@ -359,10 +359,10 @@ Completed phases:
 - May 2026 — Terraform Infrastructure as Code
 - June 2026 — Docker containerisation
 - July 2026 — GitHub Actions CI/CD
+- August 2026 — Prometheus, Grafana, and security improvements
 
 Upcoming improvements:
 
-- August 2026 — Prometheus, Grafana, and security improvements
 - September 2026 — final portfolio polish
 
 ---
