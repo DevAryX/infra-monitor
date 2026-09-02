@@ -143,17 +143,15 @@ The goal is to keep one Compose file as the main source of truth for the full st
 
 ## Networking
 
-The monitoring services use the internal Docker network:
+Prometheus and Grafana use the internal Docker network:
 
-```text
-monitoring-net
-```
+`monitoring-net`
 
 Grafana connects to Prometheus using the Compose service name:
 
-```text
-http://prometheus:9090
-```
+`http://prometheus:9090`
+
+The `infra-monitor` workload and Node Exporter use host networking because they intentionally observe the host network namespace.
 
 Node Exporter uses host networking so it can read proper host-level Linux metrics.
 
@@ -681,4 +679,4 @@ Docker Compose monitoring stack
 
 This monitoring stack moved `infra-monitor` from basic logs to proper metrics, dashboards, custom app health, secure access, CI/CD validation, and least-privilege AWS permissions.
 
-Inshallah, this is now a proper monitored cloud infrastructure project, not just a Bash script running in the background.
+This is now a proper monitored cloud infrastructure project, not just a Bash script running in the background.
