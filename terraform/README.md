@@ -180,8 +180,8 @@ environment      = "learning"
 instance_type    = "t3.micro"
 key_name         = "your-existing-key-pair-name"
 allowed_ssh_cidr = "your-public-ip/32"
-s3_bucket_name = "your-existing-infra-monitor-bucket"
-s3_object_key  = "system_report.log
+s3_bucket_name   = "your-existing-infra-monitor-bucket"
+s3_object_key    = "system_report.log"
 ```
 
 The `allowed_ssh_cidr` should normally be my current public IP with `/32` at the end.
