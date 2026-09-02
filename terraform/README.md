@@ -247,7 +247,7 @@ When Terraform asks for confirmation, type:
 yes
 ```
 
-This removes the Terraform-managed EC2 instance, Security Group rules, and Security Group.
+This removes the Terraform-managed infrastructure, including the EC2 instance, Elastic IP resources, Security Group and rules, and IAM resources.
 
 ## Rebuilding the Infrastructure
 
@@ -277,17 +277,26 @@ Only safe config, examples, and documentation should go on GitHub.
 
 ## Current Status
 
-The Terraform setup can currently:
+The Terraform setup now manages the complete AWS host layer for `infra-monitor`.
 
-* Create a Security Group
-* Create an EC2 instance
-* Restrict SSH to my public IP
-* Output the EC2 connection details
-* Destroy and rebuild the infrastructure from code
+It can:
 
-This was a big step because the project is no longer just running on manually created cloud infrastructure.
+- Provision an Amazon Linux 2023 EC2 instance
+- Allocate and associate a stable Elastic IP
+- Restrict SSH ingress to a configured `/32`
+- Provide outbound internet access
+- Attach a least-privilege IAM role and instance profile
+- Enforce IMDSv2-only metadata access
+- Create an encrypted gp3 root volume
+- Render SHA-verified first-stage user data
+- Launch the deterministic `bootstrap.sh` process
+- Configure `firewalld` before Docker
+- Install pinned Docker Buildx and Compose plugins
+- Recreate runtime configuration and Grafana credentials
+- Deploy and validate the complete monitoring stack
+- Replace and rebuild the EC2 host while retaining the stable Elastic IP
 
-Terraform can now build the base AWS setup properly.
+A fresh Terraform-managed instance can reconstruct the project without manual application setup on the server.
 
 ---
 
