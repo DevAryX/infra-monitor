@@ -110,6 +110,8 @@ Current variables include:
 * `instance_type`
 * `allowed_ssh_cidr`
 * `key_name`
+* `s3_bucket_name`
+* `s3_object_key`
 
 This makes the config easier to change without editing everything manually inside `main.tf`.
 
@@ -132,10 +134,14 @@ This file defines useful output values after deployment.
 Current outputs include:
 
 * EC2 instance ID
-* Public IP address
+* Stable Elastic IP
 * Public DNS name
 * Security Group ID
+* Deployment host
 * SSH command
+* EC2 IAM role name
+* EC2 instance profile name
+* S3 upload policy ARN
 
 This saves me from digging through the AWS Console just to find the connection details.
 
@@ -167,13 +173,15 @@ The private key should never be committed to GitHub.
 
 Create a local `terraform.tfvars` file using the example file as a guide:
 
-```hcl
+```
 aws_region       = "eu-west-2"
 project_name     = "infra-monitor"
 environment      = "learning"
 instance_type    = "t3.micro"
 key_name         = "your-existing-key-pair-name"
 allowed_ssh_cidr = "your-public-ip/32"
+s3_bucket_name = "your-existing-infra-monitor-bucket"
+s3_object_key  = "system_report.log
 ```
 
 The `allowed_ssh_cidr` should normally be my current public IP with `/32` at the end.
