@@ -744,7 +744,7 @@ proof/
 
 The original goal was to take a simple Linux monitoring script and progressively build real infrastructure, deployment, observability and security around it.
 
-Alhumdulillah That goal has been completed.
+Alhumdulillah, that goal has been completed.
 
 Future changes, if any, are optional extensions rather than missing core functionality.
 
