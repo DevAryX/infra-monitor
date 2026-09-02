@@ -359,22 +359,27 @@ custom Prometheus metrics
 
 For deployment, GitHub Actions temporarily authorises the current runner's public `/32` on SSH port `22`.
 
-The EC2 deployment checkout is synchronised using:
+The workflow deploys the exact Git commit that passed the current CI run rather than blindly deploying whatever happens to be newest on `main`.
 
-```bash
-git fetch origin main
-git reset --hard origin/main
+Conceptually:
+
+```text
+GitHub Actions
+    ↓
+current workflow commit SHA
+    ↓
+fetch repository objects
+    ↓
+reset EC2 checkout to exact tested SHA
+    ↓
+scripts/deploy-infra-monitor.sh
 ```
 
-and the canonical repository script is executed:
+The deployment script verifies that the tracked checkout is clean and, when a deployment commit is supplied, confirms that HEAD matches the requested commit before deploying.
 
-```bash
-bash scripts/deploy-infra-monitor.sh
-```
+Workflow concurrency also cancels an older in-progress main pipeline when a newer run supersedes it, preventing competing deployments to the same EC2 host.
 
 The temporary runner SSH rule is removed afterwards.
-
-A deployment is only considered successful when the post-deployment monitoring health checks pass.
 
 ---
 
