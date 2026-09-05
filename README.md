@@ -38,80 +38,9 @@ The current project includes:
 
 # Final Architecture
 
-```text
-Windows 11
-    │
-    ↓
-Ubuntu 22.04 VM
-    │
-    ├─────────────────────────────────────────────┐
-    │                                             │
-    ↓                                             ↓
-Terraform                                   Git / SSH
-    │                                             │
-    ↓                                             │
-AWS                                            GitHub
-    │                                             │
-    ├── Default VPC                              ↓
-    ├── Security Group                    GitHub Actions
-    ├── Elastic IP                               │
-    ├── IAM Role / Instance Profile              ├── Bash checks
-    ├── Encrypted gp3 EBS                        ├── Docker build
-    └── EC2                                      ├── Config validation
-         │                                       ├── Integration tests
-         │                                       └── EC2 deployment
-         ↓                                             │
-SHA-verified user data                                ↓
-         │                                      SSH deployment
-         ↓                                             │
-bootstrap.sh  ←────────────────────────────────────────┘
-         │
-         ├── firewalld
-         ├── Docker
-         ├── runtime configuration
-         ├── Grafana credentials
-         └── health validation
-         │
-         ↓
-Docker Compose
-    │
-    ├── infra-monitor
-    │    ├── Bash host health report
-    │    ├── persistent logs
-    │    ├── optional S3 upload
-    │    └── custom infra_monitor_* metrics
-    │
-    ├── node-exporter
-    │    ├── Linux host metrics
-    │    └── textfile collector
-    │
-    ├── Prometheus
-    │    ├── metric scraping
-    │    ├── PromQL
-    │    └── persistent time-series storage
-    │
-    └── Grafana
-         ├── provisioned Prometheus data source
-         └── provisioned EC2 dashboard
-```
+![Infra Monitor final architecture](docs/architecture_diagram.png)
 
-AWS access for the workload follows a separate least-privilege path:
-
-```text
-infra-monitor container
-        ↓
-EC2 Instance Metadata Service
-        ↓
-IAM Instance Profile
-        ↓
-infra-monitor-ec2-role
-        ↓
-s3:PutObject
-        ↓
-configured system-report object only
-```
-
-No long-lived AWS workload credentials need to be stored on EC2.
+The finished architecture connects Terraform-managed AWS infrastructure, deterministic EC2 bootstrap, GitHub Actions deployment, host-aware monitoring, private dashboard access and least-privilege IAM permissions.
 
 ---
 
