@@ -101,7 +101,7 @@ all Linux capabilities dropped
 read-only host-root mount
 ```
 
-It does not run with `privileged: true`.
+It doesn't run with `privileged: true`.
 
 ---
 
