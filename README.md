@@ -11,12 +11,23 @@ Terraform provisions the AWS infrastructure, cloud-init bootstraps a fresh EC2 h
 - **Status:** Core engineering complete — preparing the `v1.0.0` portfolio release
 - **Verification:** [Final technical audit passed](docs/final-verification.md)
 
+## Explore the Project
+
+- [View the architecture](#architecture)
+- [Understand the monitoring stack](#monitoring-stack)
+- [Review the security model](#security-model)
+- [Inspect the CI/CD pipeline](#cicd-pipeline)
+- [Review the Terraform infrastructure](#terraform-infrastructure)
+- [Run the project locally](#running-locally)
+- [View the project structure](#project-structure)
+- [Read the final verification](docs/final-verification.md)
+
 ## What This Demonstrates
 
 - **Reproducible infrastructure:** Terraform manages EC2, its Security Group, Elastic IP, IAM resources, encrypted root storage and bootstrap configuration.
 - **Deterministic first boot:** Cloud-init clones the repository, verifies `bootstrap.sh` against its Terraform-planned SHA256 and automatically configures a fresh host.
 - **Host-aware container monitoring:** The restricted Bash workload reports the EC2 host rather than only its container environment.
-- **Complete observability:** Node Exporter, custom `infra_monitor_*` metrics, Prometheus and an 11-panel provisioned Grafana dashboard expose system and application health.
+- **Integrated observability:** Node Exporter, custom `infra_monitor_*` metrics, Prometheus and an 11-panel provisioned Grafana dashboard expose host and application health.
 - **Health-gated CI/CD:** GitHub Actions validates Bash, builds Docker, checks Compose and monitoring configuration, runs integration tests, deploys to EC2 and verifies health.
 - **Least-privilege AWS access:** The application uses temporary IAM-role credentials through IMDSv2 and receives only `s3:PutObject` access to its configured report object.
 - **Restricted network exposure:** SSH ingress is limited to trusted `/32` sources, monitoring ports remain private and dashboards are accessed through an SSH tunnel.
@@ -27,6 +38,20 @@ Terraform provisions the AWS infrastructure, cloud-init bootstraps a fresh EC2 h
 [![Infra Monitor end-to-end architecture](docs/architecture_diagram.png)](docs/architecture_diagram.png)
 
 The architecture diagram shows the separate infrastructure, deployment, bootstrap, monitoring, storage and IAM permission flows. Select the image to view it at full resolution.
+
+### End-to-End Operation
+
+1. **Provisioning:** Terraform runs from the Ubuntu control VM, reads the existing default VPC and uses the AWS API to manage the Security Group, Elastic IP, EC2 instance, encrypted root storage, IAM resources and rendered user data.
+
+2. **First boot:** When EC2 is created, cloud-init runs the rendered user-data launcher. It installs the minimum Git and checksum dependencies, clones the repository, verifies `bootstrap.sh` against the SHA256 calculated during the Terraform plan and only then executes it.
+
+3. **Host configuration:** The version-controlled bootstrap configures `firewalld`, installs pinned Docker Buildx and Compose plugins, creates ignored runtime configuration, generates Grafana credentials and deploys the complete Compose stack.
+
+4. **Continuous delivery:** A push to `main` triggers GitHub Actions. The workflow validates Bash, builds the image, validates Compose and monitoring configuration, runs the integration stack and deploys the exact tested commit to EC2 through temporary SSH access.
+
+5. **Observability:** The one-shot Bash workload examines the EC2 host and publishes custom metrics through a shared textfile volume. Node Exporter exposes those metrics alongside native Linux metrics, Prometheus scrapes and stores them, and Grafana visualises the resulting time series.
+
+6. **Secure operation:** AWS Security Groups and host-level `firewalld` prevent public monitoring access. Grafana and Prometheus are reached through an authenticated SSH tunnel, while the application obtains temporary S3 permissions from its EC2 IAM role through IMDSv2.
 
 ---
 
@@ -130,6 +155,16 @@ infra_monitor_disk_warning
 infra_monitor_overall_warning
 infra_monitor_report_success
 ```
+
+These are two complementary monitoring paths.
+
+Node Exporter continuously exposes standard Linux metrics such as CPU, memory, filesystem, network and uptime information. The Bash application supplies project-specific state that Node Exporter would not understand by itself, including report success, threshold warnings and the timestamp of the most recent successful report.
+
+`scripts/system_report.sh` writes the metrics to a temporary file and then moves it into place as `infra_monitor.prom`. This prevents the textfile collector from reading a partially written metrics file.
+
+The shared `node-exporter-textfiles` volume connects the one-shot application to the continuously running Node Exporter service. This allows the Bash application to publish Prometheus metrics without becoming a permanent HTTP service.
+
+Prometheus then scrapes Node Exporter, stores the resulting time series in `prometheus-data`, and supplies the data queried by the provisioned Grafana dashboard.
 
 ---
 
@@ -296,11 +331,27 @@ Workflow concurrency also cancels an older in-progress main pipeline when a newe
 
 The temporary runner SSH rule is removed afterwards.
 
+The jobs form a dependency chain, so deployment cannot start unless every earlier validation and integration stage succeeds.
+
+Deploying the workflow commit SHA prevents a race where `main` changes after validation and the server accidentally receives code that was never tested by that run.
+
+An SSH connection succeeding is not treated as a successful deployment by itself. The remote deployment script rebuilds the stack and runs `monitoring_health_check.sh`. Its exit status returns to GitHub Actions and gates the final job.
+
+The health gate verifies the one-shot application result, service reachability, Prometheus configuration and readiness, scrape targets, custom metrics and Grafana database health. A failed service therefore produces a failed deployment rather than a misleading green workflow.
+
 ---
 
 # EC2 Bootstrap
 
 A fresh EC2 instance does not require manual application preparation.
+
+Bootstrapping is split into two layers.
+
+`terraform/user_data.sh.tftpl` is the small first-boot launcher. It installs the minimum dependencies, obtains the repository and verifies the planned `bootstrap.sh` checksum.
+
+`terraform/bootstrap.sh` contains the larger, version-controlled host configuration process. It handles operating-system packages, the firewall, pinned Docker tooling, runtime files, credentials, Docker Compose deployment, IAM verification and monitoring health.
+
+This separation keeps EC2 user data small while allowing the main bootstrap logic to be reviewed and versioned normally. The SHA256 check also binds the executed bootstrap to the content expected by Terraform; if the repository contains a different bootstrap, first boot stops instead of executing unverified instructions.
 
 Terraform renders a small user-data launcher that:
 
@@ -443,19 +494,40 @@ The different local ports allow the Ubuntu VM's own monitoring stack to continue
 
 ---
 
-# Terraform
+## Terraform Infrastructure
 
-Terraform runs from the Ubuntu control VM.
+Terraform runs from the Ubuntu control VM and communicates with the AWS API. It is not executed inside EC2 and is separate from the normal GitHub Actions application deployment.
 
-Create local configuration from:
+The configuration has the following responsibilities:
 
-```text
-terraform/terraform.tfvars.example
+| Responsibility | Implementation |
+| --- | --- |
+| Existing network discovery | Reads the AWS default VPC through a Terraform data source |
+| Compute | Creates the Amazon Linux 2023 EC2 instance |
+| Machine image | Resolves the current Amazon Linux 2023 AMI through AWS Systems Manager Parameter Store |
+| Network access | Creates the Security Group and restricts permanent SSH ingress to the configured trusted `/32` |
+| Stable addressing | Creates and associates an Elastic IP used by SSH and deployment |
+| Storage | Creates an encrypted 8 GiB gp3 root volume |
+| Workload identity | Creates the IAM role, least-privilege policy and EC2 instance profile |
+| Bootstrap | Renders EC2 user data with the repository, branch, S3 configuration and expected bootstrap SHA256 |
+| Metadata security | Requires IMDSv2 and configures the container-compatible metadata hop limit |
+| Automation outputs | Exposes the instance, deployment host, Security Group and IAM information needed for operation |
+
+A meaningful user-data change can replace the EC2 instance because:
+
 ```
+user_data_replace_on_change = true
+```
+
+This makes bootstrap behaviour part of the reproducible infrastructure lifecycle.
+
+The Elastic IP is managed separately from the EC2 instance, so the underlying server can be replaced while the deployment address remains stable.
+
+The AMI is resolved dynamically when infrastructure is created, while the lifecycle configuration avoids replacing a healthy instance merely because AWS later publishes a newer image.
 
 Typical workflow:
 
-```bash
+```
 cd terraform
 
 terraform init
@@ -465,9 +537,11 @@ terraform plan
 terraform apply
 ```
 
-Terraform manages the EC2 instance, Security Group rules, Elastic IP, IAM resources, encrypted root storage and bootstrap configuration.
+`terraform plan` is reviewed before applying because changes to EC2 user data can intentionally cause instance replacement.
 
-See [`terraform/README.md`](terraform/README.md) for the infrastructure-specific documentation.
+Operational outputs include the deployment host, SSH command, instance ID, Security Group ID, Elastic IP, IAM role, instance profile and S3 policy ARN.
+
+See `terraform/README.md` for the complete infrastructure workflow and safety notes.
 
 ---
 
@@ -499,6 +573,7 @@ infra-monitor/
 │   ├── ec2-startup-notes.md
 │   ├── git-notes.md
 │   ├── log-notes.md
+│   ├── final-verification.md
 │   ├── networking-notes.md
 │   └── yaml-notes.md
 │
