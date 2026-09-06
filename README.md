@@ -1,46 +1,32 @@
 # Infra Monitor
 
-`infra-monitor` is a Linux monitoring and DevOps portfolio project that evolved from a Bash system-report script into a **Terraform-managed, containerised AWS monitoring platform** with CI/CD, Prometheus, Grafana, custom application metrics, least-privilege IAM and reproducible EC2 bootstrapping.
+> A reproducible AWS-hosted Linux monitoring platform with infrastructure as code, containerised observability and health-gated CI/CD deployment.
 
-The project was built incrementally to learn how the different parts of a real infrastructure workflow fit together rather than treating Bash, AWS, Terraform, Docker, CI/CD and monitoring as disconnected exercises.
+`infra-monitor` began as a Bash system-report script and evolved into a complete cloud monitoring and automation platform.
 
----
+Terraform provisions the AWS infrastructure, cloud-init bootstraps a fresh EC2 host, Docker Compose runs the application and monitoring services, and GitHub Actions validates, tests and deploys every change. Node Exporter, Prometheus and Grafana provide host and application observability.
 
-## What the Project Does
+**Core stack:** `Linux` · `Bash` · `AWS` · `Terraform` · `Docker Compose` · `GitHub Actions` · `Prometheus` · `Grafana` · `IAM`
 
-The current project includes:
+- **Status:** Core engineering complete — preparing the `v1.0.0` portfolio release
+- **Verification:** [Final technical audit passed](docs/final-verification.md)
 
-* Linux system health reporting for CPU, memory, disk, processes and network interfaces
-* Structured local logging and configurable log rotation
-* Optional S3 report uploads
-* Host-aware monitoring from a hardened Docker container
-* Docker Compose orchestration
-* Terraform-managed AWS EC2 infrastructure
-* A stable Elastic IP
-* Restricted AWS Security Group ingress
-* Host-level `firewalld`
-* Encrypted gp3 root storage
-* IMDSv2-only instance metadata access
-* A least-privilege EC2 IAM role and instance profile
-* Node Exporter host metrics
-* Prometheus metric collection and PromQL
-* Grafana dashboards provisioned from Git
-* Custom `infra_monitor_*` Prometheus metrics from the Bash application
-* Persistent Prometheus and Grafana Docker volumes
-* Secure Grafana and Prometheus access through SSH tunnelling
-* GitHub Actions CI/CD
-* Monitoring integration tests
-* Post-deployment health checks
-* Failure, recovery and EC2 reboot testing
-* Deterministic, SHA-verified EC2 bootstrap automation
+## What This Demonstrates
 
----
+- **Reproducible infrastructure:** Terraform manages EC2, its Security Group, Elastic IP, IAM resources, encrypted root storage and bootstrap configuration.
+- **Deterministic first boot:** Cloud-init clones the repository, verifies `bootstrap.sh` against its Terraform-planned SHA256 and automatically configures a fresh host.
+- **Host-aware container monitoring:** The restricted Bash workload reports the EC2 host rather than only its container environment.
+- **Complete observability:** Node Exporter, custom `infra_monitor_*` metrics, Prometheus and an 11-panel provisioned Grafana dashboard expose system and application health.
+- **Health-gated CI/CD:** GitHub Actions validates Bash, builds Docker, checks Compose and monitoring configuration, runs integration tests, deploys to EC2 and verifies health.
+- **Least-privilege AWS access:** The application uses temporary IAM-role credentials through IMDSv2 and receives only `s3:PutObject` access to its configured report object.
+- **Restricted network exposure:** SSH ingress is limited to trusted `/32` sources, monitoring ports remain private and dashboards are accessed through an SSH tunnel.
+- **Failure and recovery engineering:** Container recreation, target failure, EC2 reboot, fresh-instance replacement, bootstrap idempotency and persistence were deliberately tested.
 
-# Final Architecture
+## Architecture
 
-![Infra Monitor final architecture](docs/architecture_diagram.png)
+[![Infra Monitor end-to-end architecture](docs/architecture_diagram.png)](docs/architecture_diagram.png)
 
-The finished architecture connects Terraform-managed AWS infrastructure, deterministic EC2 bootstrap, GitHub Actions deployment, host-aware monitoring, private dashboard access and least-privilege IAM permissions.
+The architecture diagram shows the separate infrastructure, deployment, bootstrap, monitoring, storage and IAM permission flows. Select the image to view it at full resolution.
 
 ---
 
