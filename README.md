@@ -55,7 +55,7 @@ The architecture diagram shows the separate infrastructure, deployment, bootstra
 
 ---
 
-# Main Components
+## Main Components
 
 | Component                    | Responsibility                                                    |
 | ---------------------------- | ----------------------------------------------------------------- |
@@ -73,7 +73,7 @@ The architecture diagram shows the separate infrastructure, deployment, bootstra
 
 ---
 
-# The Infra Monitor Application
+## The Infra Monitor Application
 
 The original project is still at the centre of the stack.
 
@@ -116,7 +116,7 @@ It doesn't run with `privileged: true`.
 
 ---
 
-# Monitoring Stack
+## Monitoring Stack
 
 The main monitoring flow is:
 
@@ -168,7 +168,7 @@ Prometheus then scrapes Node Exporter, stores the resulting time series in `prom
 
 ---
 
-# Grafana Dashboard
+## Grafana Dashboard
 
 The main provisioned dashboard is:
 
@@ -194,9 +194,9 @@ The dashboard and Prometheus data source are stored as version-controlled provis
 
 ---
 
-# Security Model
+## Security Model
 
-## Network Access
+### Network Access
 
 Permanent public monitoring ingress is not required.
 
@@ -214,7 +214,7 @@ Public monitoring access remains blocked for:
 
 Grafana and Prometheus are accessed through authenticated SSH local port forwarding instead.
 
-## EC2 Hardening
+### EC2 Hardening
 
 Terraform explicitly configures:
 
@@ -227,7 +227,7 @@ stable Elastic IP
 user-data replacement when bootstrap changes
 ```
 
-## Secrets and Runtime Configuration
+### Secrets and Runtime Configuration
 
 Safe example configuration is tracked:
 
@@ -257,7 +257,7 @@ Terraform state, real `.tfvars`, runtime `.env` files, private keys and logs are
 
 ---
 
-# IAM Least Privilege
+## IAM Least Privilege
 
 The EC2 workload uses a Terraform-managed IAM role rather than stored AWS access keys.
 
@@ -275,7 +275,7 @@ Testing confirmed that the workload can upload the intended report while unrelat
 
 ---
 
-# CI/CD Pipeline
+## CI/CD Pipeline
 
 The GitHub Actions pipeline is triggered by pushes to `main` and can also be run manually.
 
@@ -341,7 +341,7 @@ The health gate verifies the one-shot application result, service reachability, 
 
 ---
 
-# EC2 Bootstrap
+## EC2 Bootstrap
 
 A fresh EC2 instance does not require manual application preparation.
 
@@ -391,7 +391,7 @@ The bootstrap was also rerun to test idempotency and the new EC2 instance was re
 
 ---
 
-# Running Locally
+## Running Locally
 
 The intended local development environment is Linux.
 
@@ -457,7 +457,7 @@ Node Exporter metrics: http://localhost:9100/metrics
 
 ---
 
-# Secure Access to EC2 Monitoring
+## Secure Access to EC2 Monitoring
 
 The EC2 monitoring interfaces are not opened publicly.
 
@@ -545,7 +545,7 @@ See `terraform/README.md` for the complete infrastructure workflow and safety no
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```text
 infra-monitor/
@@ -560,6 +560,7 @@ infra-monitor/
 │   └── README.md
 │
 ├── docs/
+│   ├── README.md
 │   ├── APR-cloud-docs.md
 │   ├── MAY-terraform-notes.md
 │   ├── JUN-docker-notes.md
@@ -604,7 +605,8 @@ infra-monitor/
 │   ├── may_imgs/
 │   ├── jun_imgs/
 │   ├── jul_imgs/
-│   └── aug_imgs/
+│   ├── aug_imgs/
+│   └── sept_imgs/
 │
 ├── scripts/
 │   ├── deploy-infra-monitor.sh
@@ -632,7 +634,7 @@ infra-monitor/
 
 ---
 
-# Failure and Recovery Testing
+## Failure and Recovery Testing
 
 The project was tested beyond the normal healthy state.
 
@@ -660,7 +662,7 @@ This was important because infrastructure is more convincing when failures are d
 
 ---
 
-# Project Evolution
+## Project Evolution
 
 | Phase          | Main Focus                                            |
 | -------------- | ----------------------------------------------------- |
@@ -678,7 +680,7 @@ The core project is now complete.
 
 ---
 
-# What I Learned
+## What I Learned
 
 This project gave me practical experience with:
 
@@ -703,12 +705,15 @@ This project gave me practical experience with:
 
 ---
 
-# Documentation
+## Documentation
 
 More detailed learning notes and verification are stored throughout the repository.
 
+The month-by-month files preserve the project's development history and may describe earlier architecture. The main README and component guides document the current system.
+
 Useful starting points:
 
+* [`docs/README.md`](docs/README.md) — documentation map and source-of-truth guide
 * [`docs/AUG-monitoring-security-docs.md`](docs/AUG-monitoring-security-docs.md)
 * [`docs/aug-bootstrap-hardening.md`](docs/aug-bootstrap-hardening.md)
 * [`monitoring/README.md`](monitoring/README.md)
@@ -728,7 +733,7 @@ proof/
 
 ---
 
-# Project Status
+## Project Status
 
 **Core project complete — September 2026.**
 
