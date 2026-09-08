@@ -1248,15 +1248,11 @@ So yeah, the role is not just working, it is actually restricted.
 
 ### Terraform Note
 
-The Day 12 bootstrap changes are still waiting for the Bootstrap Hardening phase.
+At this stage of the August work, bootstrap hardening was deliberately deferred to avoid replacing EC2 during the IAM change.
 
-So I avoided accidentally replacing EC2 during today’s IAM work.
+The later bootstrap-hardening phase completed and verified that work, including fresh-instance replacement, idempotency and recovery.
 
-Safe apply path used:
-
-```
-Record safe apply path here
-```
+See [`aug-bootstrap-hardening.md`](aug-bootstrap-hardening.md) for the completed implementation and evidence.
 
 ### What I Learned
 
