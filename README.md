@@ -561,6 +561,7 @@ infra-monitor/
 │
 ├── docs/
 │   ├── README.md
+│   ├── project-retrospective.md
 │   ├── APR-cloud-docs.md
 │   ├── MAY-terraform-notes.md
 │   ├── JUN-docker-notes.md
@@ -714,6 +715,7 @@ The month-by-month files preserve the project's development history and may desc
 Useful starting points:
 
 * [`docs/README.md`](docs/README.md) — documentation map and source-of-truth guide
+* [Project retrospective](project-retrospective.md) — development journey, lessons, limitations and future improvements
 * [`docs/AUG-monitoring-security-docs.md`](docs/AUG-monitoring-security-docs.md)
 * [`docs/aug-bootstrap-hardening.md`](docs/aug-bootstrap-hardening.md)
 * [`monitoring/README.md`](monitoring/README.md)

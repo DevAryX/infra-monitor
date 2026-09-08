@@ -7,6 +7,7 @@ This repository contains both current operational documentation and historical l
 - [Main project README](../README.md) — finished architecture, operation, security model and usage
 - [Final verification](final-verification.md) — final technical audit and verified system state
 - [Architecture diagram](architecture_diagram.png) — end-to-end infrastructure and monitoring design
+- [Project retrospective](project-retrospective.md) — development journey, lessons, limitations and future improvements
 
 ## Operational Guides
 
