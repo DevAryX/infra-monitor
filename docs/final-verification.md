@@ -9,6 +9,42 @@
 
 This audit verified that `infra-monitor` remained functional, deployable, observable and appropriately protected before its final portfolio release.
 
+## v1.0.0 Release Gate
+
+**Release reference:** `v1.0.0`  
+**Verification date:** YYYY-MM-DD
+
+The final portfolio release passed the following checks:
+
+- Local Git working tree clean
+- Git object integrity check passed
+- Bash syntax checks passed
+- Docker Compose configuration validated
+- Terraform formatting and validation passed
+- Terraform reported no infrastructure changes
+- EC2 monitoring health check passed before reboot
+- EC2 reboot recovery completed successfully
+- `firewalld` recovered after reboot
+- Infra Monitor completed with exit code `0`
+- Node Exporter and Prometheus targets reported healthy
+- Custom `infra_monitor_*` metrics were ingested
+- Grafana database health reported `ok`
+- Public monitoring ports `3000`, `9090` and `9100` remained blocked
+- SSH port `22` remained restricted
+- Repository secret and sensitive-file checks passed
+- Final GitHub Actions validation and deployment completed successfully
+
+### Release Evidence
+
+- [End-to-end architecture](architecture_diagram.png)
+- [Final Grafana dashboard](../proof/aug_imgs/day16-final-ec2-dashboard.png)
+- [Terraform no-change verification](../proof/sept_imgs/day8-terraform-no-changes.png)
+- [EC2 reboot health verification](../proof/sept_imgs/day8-reboot-health-check.png)
+
+Fresh-instance replacement, automated bootstrap, idempotency and recovery had already been tested during bootstrap hardening.
+
+The release gate therefore verified the finished infrastructure without performing another unnecessary EC2 replacement.
+
 ## Local Validation
 
 The following checks passed from the Ubuntu 22.04 control VM:

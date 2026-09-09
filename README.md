@@ -8,7 +8,7 @@ Terraform provisions the AWS infrastructure, cloud-init bootstraps a fresh EC2 h
 
 **Core stack:** `Linux` · `Bash` · `AWS` · `Terraform` · `Docker Compose` · `GitHub Actions` · `Prometheus` · `Grafana` · `IAM`
 
-- **Status:** Core engineering complete — preparing the `v1.0.0` portfolio release
+- **Status:** `v1.0.0` — portfolio release complete
 - **Verification:** [Final technical audit passed](docs/final-verification.md)
 
 ## Explore the Project
@@ -738,6 +738,8 @@ proof/
 ## Project Status
 
 **Core project complete — September 2026.**
+
+**Release: `v1.0.0`**
 
 The original goal was to take a simple Linux monitoring script and progressively build real infrastructure, deployment, observability and security around it.
 
