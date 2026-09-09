@@ -22,7 +22,7 @@ It currently provisions and configures:
 - An encrypted gp3 root EBS volume
 - IMDSv2-only instance metadata access
 - SHA-verified Terraform user data
-- A deterministic `bootstrap.sh` process
+- A repeatable `bootstrap.sh` process
 - `firewalld` configuration
 - Docker and pinned Docker CLI plugins
 - Runtime environment creation
@@ -94,7 +94,7 @@ It installs the minimum required dependencies, clones or synchronises the reposi
 
 ### `bootstrap.sh`
 
-Contains the deterministic fresh-instance bootstrap.
+Contains the repeatable fresh-instance bootstrap.
 
 It installs and configures host packages, `firewalld`, Docker, pinned Docker Buildx and Compose plugins, runtime configuration, Grafana credentials, the Compose stack, IAM verification, and final monitoring health checks.
 
@@ -297,7 +297,7 @@ It can:
 - Enforce IMDSv2-only metadata access
 - Create an encrypted gp3 root volume
 - Render SHA-verified first-stage user data
-- Launch the deterministic `bootstrap.sh` process
+- Launch the repeatable `bootstrap.sh` process
 - Configure `firewalld` before Docker
 - Install pinned Docker Buildx and Compose plugins
 - Recreate runtime configuration and Grafana credentials
