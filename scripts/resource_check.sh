@@ -50,11 +50,11 @@ fi
 echo "CPU Usage: ${CPU_USAGE}%"
 echo "Memory Usage: ${MEM_USAGE}%"
 
-if [ "$CPU_USAGE" -ge "$THRESHOLD_CPU" ]; then
+if [ "$CPU_USAGE" -gt "$THRESHOLD_CPU" ]; then
     echo "High CPU usage detected"
 fi
 
-if [ "$MEM_USAGE" -ge "$THRESHOLD_MEM" ]; then
+if [ "$MEM_USAGE" -gt "$THRESHOLD_MEM" ]; then
     echo "High memory usage detected"
 fi
 
