@@ -25,7 +25,7 @@ Terraform provisions the AWS infrastructure, cloud-init bootstraps a fresh EC2 h
 ## What This Demonstrates
 
 - **Reproducible infrastructure:** Terraform manages EC2, its Security Group, Elastic IP, IAM resources, encrypted root storage and bootstrap configuration.
-- **Deterministic first boot:** Cloud-init clones the repository, verifies `bootstrap.sh` against its Terraform-planned SHA256 and automatically configures a fresh host.
+- **Repeatable, SHA-verified first boot:** Cloud-init clones the repository, verifies `bootstrap.sh` against its Terraform-planned SHA256 and automatically configures a fresh host.
 - **Host-aware container monitoring:** The restricted Bash workload reports the EC2 host rather than only its container environment.
 - **Integrated observability:** Node Exporter, custom `infra_monitor_*` metrics, Prometheus and an 11-panel provisioned Grafana dashboard expose host and application health.
 - **Health-gated CI/CD:** GitHub Actions validates Bash, builds Docker, checks Compose and monitoring configuration, runs integration tests, deploys to EC2 and verifies health.

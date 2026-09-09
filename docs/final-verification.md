@@ -12,7 +12,7 @@ This audit verified that `infra-monitor` remained functional, deployable, observ
 ## v1.0.0 Release Gate
 
 **Release reference:** `v1.0.0`  
-**Verification date:** YYYY-MM-DD
+**Verification date:** 2026-09-02
 
 The final portfolio release passed the following checks:
 
@@ -115,6 +115,6 @@ Grafana and Prometheus therefore remain accessible through authenticated SSH tun
 
 ## Conclusion
 
-The final audit passed.
+`infra-monitor` passed its final technical verification and is ready for portfolio use.
 
-`infra-monitor` is a working system ready for architecture, documentation and portfolio presentation work. No infrastructure redesign was required.
+The v1.0.0 core project is complete. Any future changes are optional extensions rather than missing release requirements.

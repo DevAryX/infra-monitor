@@ -28,6 +28,10 @@ jobs:
           bash -n scripts/resource_check.sh
           bash -n scripts/deploy-infra-monitor.sh
           bash -n scripts/monitoring_health_check.sh
+          bash -n terraform/bootstrap.sh
+          
+      - name: Run lightweight resource checker
+        run: bash scripts/resource_check.sh
 
       - name: Confirm Bash checks passed
         run: echo "Bash syntax checks passed"
@@ -253,6 +257,7 @@ jobs:
           INFRA_MONITOR_SYSTEM_LOG=/app/logs/ci-system-report.log
           INFRA_MONITOR_ERROR_LOG=/app/logs/ci-error.log
           INFRA_MONITOR_METRICS_DIR=/app/metrics
+          INFRA_MONITOR_HOST_ROOT=/host
           INFRA_MONITOR_S3_BUCKET=
           INFRA_MONITOR_S3_KEY=system_report.log
           EOF

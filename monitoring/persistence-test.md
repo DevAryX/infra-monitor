@@ -64,13 +64,14 @@ So the `grafana-data` volume worked properly as well.
 
 ## Persistence vs Reproducibility
 
-The monitoring stack now has persistent local state.
+At the time of this test, persistence had been implemented but Grafana provisioning had not yet been added.
 
-But persistence is not the same as full reproducibility.
+A later project stage added Git-tracked provisioning for both the Prometheus data source and the main dashboard.
 
-If the whole EC2 host or Docker volumes were lost, the manually created Grafana dashboard and data source could not be rebuilt from Git yet.
+The finished architecture therefore uses:
 
-So the next step is Grafana provisioning, where the data source and dashboard will be stored as version-controlled files.
+- named Docker volumes for runtime persistence
+- Git-tracked provisioning for configuration reproducibility
 
 ## Result
 

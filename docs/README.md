@@ -14,12 +14,16 @@ This repository contains both current operational documentation and historical l
 - [Terraform infrastructure](../terraform/README.md)
 - [Docker environment](../docker/README.md)
 - [Monitoring stack](../monitoring/README.md)
-- [Bootstrap notes](bootstrap-notes.md)
 - [Bootstrap hardening](aug-bootstrap-hardening.md)
 
 ## Historical Learning Record
 
 The following files preserve the development journey. Some describe earlier versions of the infrastructure that were later replaced or improved.
+
+> **Historical note:** This document records an earlier bootstrap implementation.
+> For the current architecture, use `terraform/README.md`,
+> `docs/aug-bootstrap-hardening.md`, `terraform/user_data.sh.tftpl`
+> and `terraform/bootstrap.sh`.
 
 | Phase | Documentation |
 |---|---|

@@ -11,11 +11,33 @@ if [ -f "$HOME/.infra-monitor.env" ]; then
     source "$HOME/.infra-monitor.env"
 fi
 
-THRESHOLD_CPU="${INFRA_MONITOR_CPU_THRESHOLD:-75}"
+THRESHOLD_CPU="${INFRA_MONITOR_CPU_THRESHOLD:-80}"
 THRESHOLD_MEM="${INFRA_MONITOR_MEMORY_THRESHOLD:-80}"
 
-CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
-MEM_USAGE=$(free | awk '/Mem:/ {printf "%.0f", $3/$2 * 100}')
+CPU_USAGE="$(
+    LC_ALL=C top -bn1 \
+        | awk '/Cpu\(s\)/ {
+            printf "%.0f", 100 - $8
+            exit
+        }'
+)"
+
+MEM_USAGE="$(
+    free \
+        | awk '/Mem:/ {
+            printf "%.0f", $3 / $2 * 100
+        }'
+)"
+
+if ! [[ "$CPU_USAGE" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: unable to determine CPU usage" >&2
+    exit 1
+fi
+
+if ! [[ "$MEM_USAGE" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: unable to determine memory usage" >&2
+    exit 1
+fi
 
 echo "CPU Usage: ${CPU_USAGE}%"
 echo "Memory Usage: ${MEM_USAGE}%"

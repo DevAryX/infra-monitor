@@ -123,7 +123,7 @@ Without manually setting anything up again, Grafana automatically loaded:
 
 Prometheus data source
 Infra Monitor — EC2 Overview dashboard
-all eight dashboard panels
+all eleven dashboard panels
 
 So yeah, the important Grafana setup is now reproducible from Git.
 

@@ -54,13 +54,13 @@ This confirmed Node Exporter was reporting EC2 metrics, not my local Ubuntu VM.
 
 Grafana loaded the provisioned Prometheus data source and the dashboard:
 
-```text id="p7yydm"
+```
 Infra Monitor - EC2 Overview
 ```
 
 The dashboard shows:
 
-```text id="av33ie"
+```
 CPU utilisation
 Memory utilisation
 Root disk usage
@@ -85,12 +85,12 @@ docker stats --no-stream
 
 Actual result:
 
-```text id="8k4z06"
-Check proof/aug_imgs/day10_xxx
+```
+Check proof/aug_imgs/day10-ec2-grafana-dashboard.png
 ```
 
 ## Result
 
 The monitoring stack successfully deployed to EC2.
 
-So yeah, the project has now moved from local monitoring testing to a proper cloud monitoring setup running on the AWS server. madness
+So yeah, the project has now moved from local monitoring testing to a proper cloud monitoring setup running on the AWS server.

@@ -154,7 +154,7 @@ sum by (instance) (
   rate(
     node_network_transmit_bytes_total{
       job="node-exporter",
-      device!="lo"
+      device!~"lo|docker.*|veth.*|br-.*"
     }[5m]
   )
 )
@@ -164,7 +164,7 @@ This returns the average number of non-loopback network bytes transmitted per se
 
 ## Dashboard Direction
 
-These queries will later form the basis of the Grafana dashboard.
+These queries form the basis of the provisioned Grafana dashboard.
 
 The planned dashboard will convert the stored Prometheus metrics into panels for:
 
