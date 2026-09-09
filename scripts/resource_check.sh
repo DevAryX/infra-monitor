@@ -16,10 +16,18 @@ THRESHOLD_MEM="${INFRA_MONITOR_MEMORY_THRESHOLD:-80}"
 
 CPU_USAGE="$(
     LC_ALL=C top -bn1 \
-        | awk '/Cpu\(s\)/ {
-            printf "%.0f", 100 - $8
-            exit
-        }'
+        | awk -F',' '
+            /Cpu\(s\)/ {
+                for (i = 1; i <= NF; i++) {
+                    if ($i ~ /[[:space:]]id([[:space:]]|$)/) {
+                        value = $i
+                        gsub(/[^0-9.]/, "", value)
+                        printf "%.0f", 100 - value
+                        exit
+                    }
+                }
+            }
+        '
 )"
 
 MEM_USAGE="$(

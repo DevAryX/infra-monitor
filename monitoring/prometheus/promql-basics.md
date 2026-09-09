@@ -113,7 +113,7 @@ This calculates the percentage of system memory that is not currently available.
 
 ### Root Filesystem Utilisation Percentage
 
-```promql
+```
 100 * (
   1 -
   (
@@ -134,12 +134,12 @@ The root filesystem mount label was checked before using this query.
 
 ### Network Receive Rate
 
-```promql
+```
 sum by (instance) (
   rate(
     node_network_receive_bytes_total{
       job="node-exporter",
-      device!="lo"
+      device!~"lo|docker.*|veth.*|br-.*"
     }[5m]
   )
 )
@@ -149,7 +149,7 @@ This returns the average number of non-loopback network bytes received per secon
 
 ### Network Transmit Rate
 
-```promql
+```
 sum by (instance) (
   rate(
     node_network_transmit_bytes_total{
@@ -166,7 +166,7 @@ This returns the average number of non-loopback network bytes transmitted per se
 
 These queries form the basis of the provisioned Grafana dashboard.
 
-The planned dashboard will convert the stored Prometheus metrics into panels for:
+The provisioned dashboard uses these PromQL patterns to present:
 
 * Target health
 * CPU utilisation

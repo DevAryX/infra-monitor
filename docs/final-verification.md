@@ -2,7 +2,7 @@
 
 - Audit date: 2 September 2026
 - Branch: `main`
-- Verification commit: `f697545`
+- Audit commit: `f697545`
 - Overall result: Passed
 
 ## Purpose

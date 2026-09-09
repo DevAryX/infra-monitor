@@ -20,15 +20,11 @@ This repository contains both current operational documentation and historical l
 
 The following files preserve the development journey. Some describe earlier versions of the infrastructure that were later replaced or improved.
 
-> **Historical note:** This document records an earlier bootstrap implementation.
-> For the current architecture, use `terraform/README.md`,
-> `docs/aug-bootstrap-hardening.md`, `terraform/user_data.sh.tftpl`
-> and `terraform/bootstrap.sh`.
-
 | Phase | Documentation |
 |---|---|
 | Git and Bash foundations | [Git notes](git-notes.md), [logging notes](log-notes.md) |
 | Initial AWS deployment | [Cloud notes](cloud-notes.md), [EC2 startup notes](ec2-startup-notes.md) |
+| EC2 bootstrap evolution | [Bootstrap notes](bootstrap-notes.md) |
 | Networking and cloud polish | [April cloud documentation](APR-cloud-docs.md), [networking notes](networking-notes.md), [cost notes](cost-notes.md) |
 | Terraform | [May Terraform notes](MAY-terraform-notes.md) |
 | Docker and YAML | [June Docker notes](JUN-docker-notes.md), [YAML notes](yaml-notes.md) |

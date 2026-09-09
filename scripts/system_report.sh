@@ -289,7 +289,28 @@ echo "Cores: $(nproc)"
 echo "Model: $(lscpu | grep 'Model name' | sed 's/Model name:\s*//')" >> "$LOG_FILE"
 echo "Cores: $(nproc)" >> "$LOG_FILE"
 
-CPU_USAGE=$(top -bn1 | awk '/^%Cpu/ {printf "%.0f", 100 - $8}')
+CPU_USAGE="$(
+    LC_ALL=C top -bn1 \
+        | awk -F',' '
+            /Cpu\(s\)/ {
+                for (i = 1; i <= NF; i++) {
+                    if ($i ~ /[[:space:]]id([[:space:]]|$)/) {
+                        value = $i
+                        gsub(/[^0-9.]/, "", value)
+                        printf "%.0f", 100 - value
+                        exit
+                    }
+                }
+            }
+        '
+)"
+
+if ! [[ "$CPU_USAGE" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: unable to determine CPU usage" >&2
+    log_error "Unable to determine CPU usage"
+    exit 1
+fi
+
 status_message "$CPU_USAGE" "$CPU_THRESHOLD" "CPU"
 
 # ----------------------------

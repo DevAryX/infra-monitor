@@ -82,20 +82,29 @@ So it gets the visibility it needs without becoming an overpowered container for
 
 ### Deployment Checkout
 
-The EC2 repo is now treated as a deployment checkout.
+The EC2 repository is treated as a deployment checkout.
 
-GitHub Actions updates it with:
+GitHub Actions deploys the exact commit that passed the current workflow.
+
+The deployment flow is:
 
 ```text
-git fetch origin main
-git reset --hard origin/main
+workflow commit SHA
+↓
+fetch repository objects
+↓
+verify commit exists
+↓
+reset EC2 checkout to exact SHA
+↓
+pass DEPLOY_COMMIT to deployment script
+↓
+verify HEAD matches requested commit
 ```
 
-Runtime files stay outside tracked Git state.
+Runtime files remain outside tracked Git state.
 
-The deployment script no longer runs `git pull`.
-
-Instead, it checks that the repo is clean and matches `origin/main`.
+The deployment script does not independently pull or fetch `main`, preventing the deployment target from changing underneath a running workflow.
 
 ### Deployment Script Source
 

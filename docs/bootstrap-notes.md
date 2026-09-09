@@ -1,5 +1,10 @@
 # EC2 Bootstrapping Notes
 
+> **Historical note:** This document records an earlier bootstrap implementation.
+> For the current architecture, use `terraform/README.md`,
+> `docs/aug-bootstrap-hardening.md`, `terraform/user_data.sh.tftpl`
+> and `terraform/bootstrap.sh`.
+
 ## Purpose
 
 This document explains the post-July EC2 bootstrapping improvement.
